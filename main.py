@@ -5,20 +5,20 @@ import pandas as pd
 from constants import IOP
 
 IOP_INDEX = 0
-PREVIOUS_RHAE = 51
+RHAS = 51
 
 def find_velocity_by_formula(discharge, id_of_pipe):
     velocity = discharge * (4/(3.14 * (id_of_pipe/1000)**2))
-    return round(velocity, 2)
+    return round(velocity, 5)
 
 def find_friction_head_loss_by_formula(length, discharge, cr_value, iop):
     fhl = ((length * (discharge/cr_value)**1.81)/(994.62 * (iop/1000)**4.81)) * 1.1
-    return round(fhl, 2)
+    return round(fhl, 5)
 
 def find_residual_head_at_end_by_formula(diff_in_g_level, avail_resi_head_at_start, fhl):
 
     rhae = (diff_in_g_level + avail_resi_head_at_start) - fhl
-    return round(rhae, 2)
+    return round(rhae, 5)
 
 # print("lenght of iop", len(IOP))
 df = pd.read_excel("ha.xlsx", sheet_name="Sheet1")
@@ -31,13 +31,13 @@ df = df.dropna(subset=['start_node'])
 
 
 
-def get_computed_values(working_row, iop_index, wr_index, previous_rhae, previous_values_dict):
+def get_computed_values(working_row, iop_index, wr_index, rhas, previous_values_dict):
     calculated_velocity = find_velocity_by_formula(working_row['discharge'], IOP[iop_index])
     calculated_fhl = find_friction_head_loss_by_formula(length=working_row['length'],
                                                         discharge=working_row['discharge'],
                                                         cr_value=working_row['cr_value'], iop=IOP[iop_index])
     difference_in_g_level = working_row['ground_level_start'] - working_row['ground_level_end']
-    rhas = previous_rhae
+    rhas = rhas
 
     calculated_rhae = find_residual_head_at_end_by_formula(diff_in_g_level=difference_in_g_level,
                                                            avail_resi_head_at_start=rhas,
@@ -45,7 +45,7 @@ def get_computed_values(working_row, iop_index, wr_index, previous_rhae, previou
 
 
 
-    print("PREVIOUS ROW DICT", previous_values_dict)
+    # print("PREVIOUS ROW DICT", previous_values_dict)
     previous_iop = previous_values_dict[wr_index-1]['iop'] if wr_index != 0 else None
     print("rhas--->", rhas)
     print("rhae--->", calculated_rhae)
@@ -57,22 +57,40 @@ def get_computed_values(working_row, iop_index, wr_index, previous_rhae, previou
     if previous_iop and IOP[iop_index] > previous_iop:
         return False
 
-    if 0.1 < calculated_velocity < 3 and calculated_rhae >= 28:
-         return {
-             "iop": IOP[iop_index],
-             "iop_index": iop_index,
-             "velocity": calculated_velocity,
-             "fhl": calculated_fhl,
-             "rhas": rhas,
-             "rhae": calculated_rhae,
-         }
+    elif 0.6 <= calculated_velocity <= 3:
+        is_village_node = "V" in working_row["end_node"]
+        print("passed velocity, if its village node", is_village_node)
+        if is_village_node:
+            if calculated_rhae >= 28:
+                 return {
+                     "iop": IOP[iop_index],
+                     "iop_index": iop_index,
+                     "velocity": calculated_velocity,
+                     "fhl": calculated_fhl,
+                     "rhas": rhas,
+                     "rhae": calculated_rhae,
+                     "row_vals": dict(working_row)
+                 }
+            else:
+                result = get_computed_values(working_row, iop_index + 1, wr_index, rhas, previous_values_dict)
+                return result
+        else:
+            return {
+                "iop": IOP[iop_index],
+                "iop_index": iop_index,
+                "velocity": calculated_velocity,
+                "fhl": calculated_fhl,
+                "rhas": rhas,
+                "rhae": calculated_rhae,
+                "row_vals": dict(working_row)
+            }
 
     else:
-        result = get_computed_values(working_row, iop_index + 1, wr_index, previous_rhae, previous_values_dict)
+        result = get_computed_values(working_row, iop_index + 1, wr_index, rhas, previous_values_dict)
         return result
 
-def start_increasing_iop_values(working_row, iop_index, row_index, previous_rhae, computed_values_dict):
-    current_row_computed_values = get_computed_values(working_row, iop_index, row_index, previous_rhae, computed_values_dict)
+def start_increasing_iop_values(working_row, iop_index, row_index, rhas, computed_values_dict):
+    current_row_computed_values = get_computed_values(working_row, iop_index, row_index, rhas, computed_values_dict)
     if current_row_computed_values:
         computed_values = {
             "velocity": current_row_computed_values['velocity'],
@@ -81,14 +99,17 @@ def start_increasing_iop_values(working_row, iop_index, row_index, previous_rhae
             "fhl": current_row_computed_values['fhl'],
             "rhas": current_row_computed_values['rhas'],
             "rhae": current_row_computed_values['rhae'],
-            "row_vals": dict(row)
+            "row_vals": current_row_computed_values['row_vals']
         }
         computed_values_dict[row_index] = computed_values
         return computed_values
     else:
         """Use high iop for previous pipe"""
-        print("computed_values dict", computed_values_dict)
+        # print("computed_values dict", computed_values_dict)
         previous_row = computed_values_dict[row_index - 1]
+        previous_row_is_village_node = "V" in previous_row['row_vals']['end_node']
+        if row_index in computed_values_dict:
+            del computed_values_dict[row_index]
         computed_values = start_increasing_iop_values(previous_row['row_vals'], previous_row['iop_index']+1, row_index-1, previous_row['rhas'], computed_values_dict)
         return computed_values
 computed_values_dict = {}
@@ -97,10 +118,15 @@ i = 0
 while i <= len(df)-1:
     print("current row>>>", i)
     row = df.loc[i]
-    comp_values = start_increasing_iop_values(row, IOP_INDEX, i, PREVIOUS_RHAE, computed_values_dict)
-    PREVIOUS_RHAE = comp_values['rhae']
+    is_village_node = True if "V" in row['end_node'] else False
+    print("IS VILLAGE NODE", is_village_node)
+    comp_values = start_increasing_iop_values(row, IOP_INDEX, i, RHAS, computed_values_dict)
+
+    # RHAS = comp_values['rhae']
+
     print("COMPUTED VALUES DICT", computed_values_dict)
     i = list(computed_values_dict)[-1]
+    RHAS = computed_values_dict[i]['rhae']
     print("last element key of computed dict::::", i)
     i += 1
     print("next i", i)
