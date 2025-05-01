@@ -7,7 +7,7 @@ from constants import IOP
 
 IOP_INDEX = 0
 RHAS = 0
-
+LOOP_COUNT = {}
 
 def find_velocity_by_formula(discharge, id_of_pipe):
     velocity = discharge * (4/(3.14 * (id_of_pipe/1000)**2))
@@ -75,19 +75,19 @@ def get_computed_values(working_row, iop_index, wr_index, rhas, previous_values_
     pipe_indices_list = ordered_df.index[ordered_df['end_node'] == working_row['start_node']].to_list()
     parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
     previous_iop = previous_values_dict[parent_pipe_index]['iop'] if wr_index != 0 else None
-    print("rhas--->", rhas)
-    print("rhae--->", calculated_rhae)
-    print("velocity", calculated_velocity)
-    print("iop index", iop_index)
-    print("current_iop---->", IOP[iop_index])
-    print("previous_iop---->", previous_iop)
-    print("current_row:::", wr_index, "start_node", working_row['start_node'])
+    # print("rhas--->", rhas)
+    # print("rhae--->", calculated_rhae)
+    # print("velocity", calculated_velocity)
+    # print("iop index", iop_index)
+    # print("current_iop---->", IOP[iop_index])
+    # print("previous_iop---->", previous_iop)
+    # print("current_row:::", wr_index, "start_node", working_row['start_node'])
     if previous_iop and IOP[iop_index] > previous_iop:
         return False
 
-    elif 0.6 <= calculated_velocity <= 3:
+    elif 0.6 <= calculated_velocity <= 3 and calculated_rhae > 1:
         is_village_node = "V" in working_row["end_node"]
-        print("passed velocity, if its village node", is_village_node)
+        # print("passed velocity, if its village node", is_village_node)
         if is_village_node:
             if calculated_rhae >= 28:
                  return {
@@ -136,6 +136,7 @@ def start_increasing_iop_values(working_row, iop_index, row_index, rhas, compute
         computed_values_dict[row_index] = computed_values
         return computed_values
     else:
+        print("loop count.......\n", LOOP_COUNT)
         """Use high iop for previous pipe"""
         current_pipe_starting_node = working_row['start_node']
         parent_pipe_index_list = ordered_df.index[ordered_df['end_node'] == current_pipe_starting_node].to_list()
@@ -155,7 +156,7 @@ def start_increasing_iop_values(working_row, iop_index, row_index, rhas, compute
 
 computed_values_dict = {}
 i = 0
-print("df length", len(ordered_df))
+# print("df length", len(ordered_df))
 while i <= len(ordered_df)-1:
     print("current row>>>", i)
     row = ordered_df.loc[i]
@@ -168,19 +169,19 @@ while i <= len(ordered_df)-1:
     i = list(computed_values_dict)[-1]
 
 
-    print("last element key of computed dict::::", i)
+    # print("last element key of computed dict::::", i)
     i += 1
     if i > len(ordered_df)-1:
         break
     current_row = ordered_df.loc[i]
-    print("df index of end node, parent:::",
-          ordered_df.index[ordered_df['end_node'] == current_row['start_node']].to_list())
+    # print("df index of end node, parent:::",
+          # ordered_df.index[ordered_df['end_node'] == current_row['start_node']].to_list())
     pipe_indices_list = ordered_df.index[ordered_df['end_node'] == current_row['start_node']].to_list()
     parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
-    print("........parent piep index", parent_pipe_index)
+    # print("........parent piep index", parent_pipe_index)
     RHAS = computed_values_dict[parent_pipe_index]['rhae']
-    print("current pipe rhas is previous rhae?????????????", RHAS)
-    print("next i", i)
+    # print("current pipe rhas is previous rhae?????????????", RHAS)
+    # print("next i", i)
 
 for key, value in computed_values_dict.items():
     ordered_df.loc[key, 'new_iop'] = value['iop']
