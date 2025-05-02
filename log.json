@@ -1,0 +1,344 @@
+{
+    "0": {
+        "velocity": 2.50048,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.17683,
+        "rhas": 0,
+        "rhae": 57.84317,
+        "row_vals": {
+            "start_node": "DC-2",
+            "end_node": "J-3700",
+            "discharge": 3.84724,
+            "length": 70.4,
+            "Diameter (mm)": 1400.0,
+            "ground_level_start": 265.0,
+            "ground_level_end": 206.98
+        },
+        "delete_memory_index": 1
+    },
+    "1": {
+        "velocity": 1.88467,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.49923,
+        "rhas": 57.84317,
+        "rhae": 57.38394,
+        "row_vals": {
+            "start_node": "J-3700",
+            "end_node": "J-3701",
+            "discharge": 2.89976,
+            "length": 331.56,
+            "Diameter (mm)": 1400.0,
+            "ground_level_start": 206.98,
+            "ground_level_end": 206.94
+        },
+        "delete_memory_index": 2
+    },
+    "2": {
+        "velocity": 1.88053,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 2.03791,
+        "rhas": 57.38394,
+        "rhae": 67.57603,
+        "row_vals": {
+            "start_node": "J-3701",
+            "end_node": "J-3702",
+            "discharge": 2.89338,
+            "length": 1358.88,
+            "Diameter (mm)": 1400.0,
+            "ground_level_start": 206.94,
+            "ground_level_end": 194.71
+        },
+        "delete_memory_index": 3
+    },
+    "3": {
+        "velocity": 1.55833,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.47769,
+        "rhas": 67.57603,
+        "rhae": 69.72834,
+        "row_vals": {
+            "start_node": "J-3702",
+            "end_node": "J-3703",
+            "discharge": 2.39764,
+            "length": 447.59,
+            "Diameter (mm)": 1400.0,
+            "ground_level_start": 194.71,
+            "ground_level_end": 192.08
+        },
+        "delete_memory_index": 4
+    },
+    "4": {
+        "velocity": 1.38319,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.88783,
+        "rhas": 69.72834,
+        "rhae": 82.42051,
+        "row_vals": {
+            "start_node": "J-3703",
+            "end_node": "J-3704",
+            "discharge": 2.12818,
+            "length": 1032.23,
+            "Diameter (mm)": 1300.0,
+            "ground_level_start": 192.08,
+            "ground_level_end": 178.5
+        },
+        "delete_memory_index": 5
+    },
+    "5": {
+        "velocity": 1.3633,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.14743,
+        "rhas": 82.42051,
+        "rhae": 81.13308,
+        "row_vals": {
+            "start_node": "J-3704",
+            "end_node": "J-3705",
+            "discharge": 2.09757,
+            "length": 175.96,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 178.5,
+            "ground_level_end": 179.64
+        },
+        "delete_memory_index": 6
+    },
+    "6": {
+        "velocity": 1.35912,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.2171,
+        "rhas": 81.13308,
+        "rhae": 83.23598,
+        "row_vals": {
+            "start_node": "J-3705",
+            "end_node": "J-3706",
+            "discharge": 2.09114,
+            "length": 260.56,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 179.64,
+            "ground_level_end": 177.32
+        },
+        "delete_memory_index": 7
+    },
+    "7": {
+        "velocity": 1.35425,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.30036,
+        "rhas": 83.23598,
+        "rhae": 85.82562,
+        "row_vals": {
+            "start_node": "J-3706",
+            "end_node": "J-3707",
+            "discharge": 2.08365,
+            "length": 362.84,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 177.32,
+            "ground_level_end": 174.43
+        },
+        "delete_memory_index": 8
+    },
+    "8": {
+        "velocity": 1.32615,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.55698,
+        "rhas": 85.82562,
+        "rhae": 80.39864,
+        "row_vals": {
+            "start_node": "J-3707",
+            "end_node": "J-3708",
+            "discharge": 2.04042,
+            "length": 698.86,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 174.43,
+            "ground_level_end": 179.3
+        },
+        "delete_memory_index": 9
+    },
+    "9": {
+        "velocity": 1.32206,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.19474,
+        "rhas": 80.39864,
+        "rhae": 81.5239,
+        "row_vals": {
+            "start_node": "J-3708",
+            "end_node": "J-3709",
+            "discharge": 2.03412,
+            "length": 245.72,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 179.3,
+            "ground_level_end": 177.98
+        },
+        "delete_memory_index": 10
+    },
+    "10": {
+        "velocity": 1.31773,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.31778,
+        "rhas": 81.5239,
+        "rhae": 84.22612,
+        "row_vals": {
+            "start_node": "J-3709",
+            "end_node": "J-3710",
+            "discharge": 2.02746,
+            "length": 403.35,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 177.98,
+            "ground_level_end": 174.96
+        },
+        "delete_memory_index": 11
+    },
+    "11": {
+        "velocity": 1.31325,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.19158,
+        "rhas": 84.22612,
+        "rhae": 86.17454,
+        "row_vals": {
+            "start_node": "J-3710",
+            "end_node": "J-3711",
+            "discharge": 2.02057,
+            "length": 244.67,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 174.96,
+            "ground_level_end": 172.82
+        },
+        "delete_memory_index": 12
+    },
+    "12": {
+        "velocity": 1.23619,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.27767,
+        "rhas": 86.17454,
+        "rhae": 84.93687,
+        "row_vals": {
+            "start_node": "J-3711",
+            "end_node": "J-3712",
+            "discharge": 1.902,
+            "length": 395.64,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 172.82,
+            "ground_level_end": 173.78
+        },
+        "delete_memory_index": 13
+    },
+    "13": {
+        "velocity": 1.07468,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.22559,
+        "rhas": 84.93687,
+        "rhae": 83.96128,
+        "row_vals": {
+            "start_node": "J-3712",
+            "end_node": "J-3713",
+            "discharge": 1.6535,
+            "length": 414.14,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 173.78,
+            "ground_level_end": 174.53
+        },
+        "delete_memory_index": 14
+    },
+    "14": {
+        "velocity": 1.05705,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.34078,
+        "rhas": 83.96128,
+        "rhae": 81.6905,
+        "row_vals": {
+            "start_node": "J-3713",
+            "end_node": "J-3714",
+            "discharge": 1.62637,
+            "length": 644.63,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 174.53,
+            "ground_level_end": 176.46
+        },
+        "delete_memory_index": 15
+    },
+    "15": {
+        "velocity": 1.04745,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.34845,
+        "rhas": 81.6905,
+        "rhae": 81.10205,
+        "row_vals": {
+            "start_node": "J-3714",
+            "end_node": "J-3715",
+            "discharge": 1.61161,
+            "length": 670.11,
+            "Diameter (mm)": 1200.0,
+            "ground_level_start": 176.46,
+            "ground_level_end": 176.7
+        },
+        "delete_memory_index": 15
+    },
+    "16": {
+        "velocity": 1.01144,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.1586,
+        "rhas": 81.10205,
+        "rhae": 79.55345,
+        "row_vals": {
+            "start_node": "J-3715",
+            "end_node": "J-3716",
+            "discharge": 1.5562,
+            "length": 324.94,
+            "Diameter (mm)": 1100.0,
+            "ground_level_start": 176.7,
+            "ground_level_end": 178.09
+        },
+        "delete_memory_index": 15
+    },
+    "17": {
+        "velocity": 0.82547,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.15164,
+        "rhas": 79.55345,
+        "rhae": 75.34181,
+        "row_vals": {
+            "start_node": "J-3716",
+            "end_node": "J-3717",
+            "discharge": 1.27007,
+            "length": 448.77,
+            "Diameter (mm)": 1000.0,
+            "ground_level_start": 178.09,
+            "ground_level_end": 182.15
+        },
+        "delete_memory_index": 15
+    },
+    "18": {
+        "velocity": 0.82107,
+        "iop": 1400,
+        "iop_index": 22,
+        "fhl": 0.1009,
+        "rhas": 75.34181,
+        "rhae": 71.89091,
+        "row_vals": {
+            "start_node": "J-3717",
+            "end_node": "J-3718",
+            "discharge": 1.2633,
+            "length": 301.5,
+            "Diameter (mm)": 1000.0,
+            "ground_level_start": 182.15,
+            "ground_level_end": 185.5
+        },
+        "delete_memory_index": 15
+    }
+}
