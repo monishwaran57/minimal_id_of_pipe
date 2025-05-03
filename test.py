@@ -2,18 +2,18 @@ from gpt_dfs import dfs_df as ordered_df
 import math
 
 
-ordered_rows = []
-for i, row in ordered_df.iterrows():
-
-    if i not in ordered_rows:
-        ordered_rows.append(i)
-    print("row start node", row['start_node'])
-    child_indexes_v_nodes = ordered_df.index[(ordered_df['start_node'] == row['end_node']) & ordered_df['end_node'].str.contains('V', na=False)].to_list()
-    ordered_rows += child_indexes_v_nodes
-
-print("ordered rows", ordered_rows)
-
-ordered_df
+# ordered_rows = []
+# for i, row in ordered_df.iterrows():
+#
+#     if i not in ordered_rows:
+#         ordered_rows.append(i)
+#     print("row start node", row['start_node'])
+#     child_indexes_v_nodes = ordered_df.index[(ordered_df['start_node'] == row['end_node']) & ordered_df['end_node'].str.contains('V', na=False)].to_list()
+#     ordered_rows += child_indexes_v_nodes
+#
+# print("ordered rows", ordered_rows)
+#
+# ordered_df = ordered_df.loc[ordered_rows]
 
 # unique_df = df.drop_duplicates(keep="first")
 
@@ -56,7 +56,9 @@ def get_computed_values(working_row, iop, rhas):
 rhas_dict = {}
 initial_rhas = 0
 for i, row in ordered_df.iterrows():
-    current_rhas = 0 if i-1 not in rhas_dict else rhas_dict[i-1]
+    pipe_indices_list = ordered_df.index[ordered_df['end_node'] == row['start_node']].to_list()
+    parent_pipe_index = 0 if len(pipe_indices_list)==0 else pipe_indices_list[0]
+    current_rhas = 0 if i-1 not in rhas_dict else rhas_dict[parent_pipe_index]
     result = get_computed_values(row, row['Diameter (mm)'],current_rhas)
     ordered_df.loc[i, 'velocity'] = result['velocity']
     ordered_df.loc[i, 'rhas'] = result['rhas']
