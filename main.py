@@ -1,3 +1,4 @@
+import copy
 import json
 
 import pandas as pd
@@ -25,8 +26,8 @@ logging.basicConfig(
 
 IOP_INDEX = 0
 RHAS = 0
-HIGHEST_IOP_EVER_HAD = {}
 LOOP_COUNT = {}
+increased_top = {0:0}
 
 
 def find_velocity_by_formula(discharge, id_of_pipe):
@@ -35,7 +36,7 @@ def find_velocity_by_formula(discharge, id_of_pipe):
 
 
 def find_closest_iop_index_by_formula(discharge):
-    velocity = 1.8
+    velocity = 3
     id_of_pipe = (((4 / (velocity / discharge)) / 3.14) ** (1 / 2)) * 1000
     closest_value = min(IOP, key=lambda x: abs(x - id_of_pipe))
     iop_index = IOP.index(closest_value)
@@ -82,24 +83,92 @@ def find_residual_head_at_end_by_formula(diff_in_g_level, avail_resi_head_at_sta
 ordered_df = dfs_df
 
 
-def make_some_pressure_for_village_node(v_rhae, v_index, previous_values_dict):
-    missing_rhae = 28 - v_rhae
+def make_some_pressure_for_child_node(c_rhae, c_index, previous_values_dict, village_node):
+    needed_rhae = 28 if village_node else 21
+    missing_rhae = needed_rhae - c_rhae
     print("missing rhae", missing_rhae)
+    print("previous dict", previous_values_dict)
+    duplicate_dict = copy.deepcopy(previous_values_dict)
     size_increasable_parent_pipes = []
     i = 1
+
     size_increased_parent_pipes = {}
     while missing_rhae >=0:
-        parent_pipe = previous_values_dict[v_index-i]
-        if "V" not in parent_pipe['row_vals']['end_node']:
+        parent_pipe = duplicate_dict[c_index - i]
+        if "V" not in parent_pipe['row_vals']['end_node'] and parent_pipe['fhl'] >= 1 and parent_pipe['iop'] < parent_pipe['parent_iop'] or parent_pipe['parent_iop'] is None:
             size_increasable_parent_pipes.append(parent_pipe)
-            new_fhl = find_friction_head_loss_by_formula(length=parent_pipe['row_vals']['length'], discharge=parent_pipe['row_vals']['discharge'],
-                                               cr_value=1, iop=parent_pipe['parent_iop'])
-            parent_pipe['new_fhl'] = new_fhl
-            size_increased_parent_pipes[v_index-i] = parent_pipe
-            reduced_fhl = parent_pipe['fhl'] - new_fhl
-            missing_rhae = missing_rhae - reduced_fhl
+            print(previous_values_dict)
+            current_iop_index = IOP.index(parent_pipe['iop'])
+            forward_i = 1
+            if current_iop_index >= len(IOP)-1:
+                j = c_index - i + forward_i
+                i = 0
+                parent_pipe = duplicate_dict[j]
+                current_iop_index = IOP.index(parent_pipe['iop'])
+                forward_i += 1
+
+            increased_iop = IOP[current_iop_index + 1]
+
+            new_velocity = find_velocity_by_formula(discharge=parent_pipe['row_vals']['discharge'],
+                                                    id_of_pipe=increased_iop)
+            if 0.6 <= new_velocity <=3:
+                new_fhl = find_friction_head_loss_by_formula(length=parent_pipe['row_vals']['length'],
+                                                             discharge=parent_pipe['row_vals']['discharge'],
+                                                             cr_value=1, iop=increased_iop)
+
+                reduced_fhl = parent_pipe['fhl'] - new_fhl
+                missing_rhae = missing_rhae - reduced_fhl
+                parent_pipe['fhl'] = new_fhl
+                parent_pipe['iop'] = increased_iop
+                size_increased_parent_pipes[c_index - i] = parent_pipe
+                print(previous_values_dict)
         i += 1
-    print("size increasable parent pipes", size_increasable_parent_pipes)
+        if i > c_index:
+            print("...........computed values dict", previous_values_dict)
+            previous_values_dict = {**previous_values_dict, **size_increased_parent_pipes}
+            new_computed_dict = {}
+            sorted_dict = {k: previous_values_dict[k] for k in sorted(previous_values_dict)}
+            for parent_index, parent in sorted_dict.items():
+                parent_iop_index = IOP.index(parent['iop'])
+                pipe_indices_list = ordered_df.index[
+                    ordered_df['end_node'] == parent['row_vals']['start_node']].to_list()
+                parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
+                PARENT_RHAS = previous_values_dict[parent_pipe_index]['rhae'] if parent_index != 0 else 0
+
+                new_computed_values = start_increasing_iop_values(parent['row_vals'], parent_iop_index,
+                                            parent_index, PARENT_RHAS, previous_values_dict)
+                new_computed_dict[parent_index] = new_computed_values
+                previous_values_dict[parent_index] = new_computed_values
+
+            child_row = ordered_df.loc[c_index]
+            parent_pipe_indices_list = ordered_df.index[
+                ordered_df['end_node'] == child_row['start_node']].to_list()
+            childs_parent_pipe_index = 0 if len(parent_pipe_indices_list) == 0 else parent_pipe_indices_list[0]
+            CHILDS_PARENT_RHAS = previous_values_dict[childs_parent_pipe_index]['rhae'] if c_index != 0 else 0
+            nearer_iop_index = find_closest_iop_index_by_formula(discharge=child_row['discharge'])
+            parents_iop_index = new_computed_dict[childs_parent_pipe_index]['iop_index']
+            new_c_rhae = c_rhae
+            while nearer_iop_index <= parents_iop_index:
+                new_c_fhl = find_friction_head_loss_by_formula(length=child_row['length'], discharge=child_row['discharge'],
+                                                               cr_value=1, iop=IOP[nearer_iop_index])
+                diff_in_g_level = child_row['ground_level_start'] - child_row['ground_level_end']
+                new_c_rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level,
+                                                                  avail_resi_head_at_start=CHILDS_PARENT_RHAS,
+                                                                  fhl=new_c_fhl)
+                nearer_iop_index += 1
+            needed_rhae = 28 if village_node else 23
+            missing_rhae = needed_rhae - new_c_rhae
+            if missing_rhae <=0:
+                pass
+            else:
+                result = make_some_pressure_for_child_node(c_rhae=new_c_rhae, c_index=c_index,previous_values_dict=previous_values_dict,
+                                                  village_node=village_node)
+                return result
+            return new_computed_dict
+
+    previous_values_dict = {**previous_values_dict, **size_increased_parent_pipes}
+    print("look inside way the things tonight", size_increasable_parent_pipes)
+    return previous_values_dict
 
 
 
@@ -132,7 +201,8 @@ def get_computed_values(working_row, iop_index, wr_index, rhas, previous_values_
         "rhas": rhas,
         "rhae": calculated_rhae,
         "velocity": calculated_velocity,
-        "fhl": calculated_fhl
+        "fhl": calculated_fhl,
+        "is_village_node": "V" in working_row["end_node"]
     }
     log_rows.append(log_row)
     logging.info(f"rhas--->{rhas}")
@@ -145,8 +215,7 @@ def get_computed_values(working_row, iop_index, wr_index, rhas, previous_values_
     logging.info(
         f"current_row:::{wr_index}, start_node::::{working_row['start_node']}, end_node::::{working_row['end_node']}")
     if previous_iop and IOP[iop_index] > previous_iop:
-        HIGHEST_IOP_EVER_HAD[wr_index] = iop_index
-        return False
+        return [False, log_row]
 
     elif 0.6 <= calculated_velocity <= 3 and calculated_rhae > 1:
         is_village_node = "V" in working_row["end_node"]
@@ -165,7 +234,6 @@ def get_computed_values(working_row, iop_index, wr_index, rhas, previous_values_
                     "row_vals": dict(working_row),
                 }
             else:
-                make_some_pressure_for_village_node(calculated_rhae, wr_index, previous_values_dict)
                 result = get_computed_values(working_row, iop_index + 1, wr_index, rhas, previous_values_dict)
                 return result
         else:
@@ -188,8 +256,7 @@ def get_computed_values(working_row, iop_index, wr_index, rhas, previous_values_
         return result
 
 
-def start_increasing_iop_values(working_row, iop_index, row_index, rhas, computed_values_dict, delete_memory_index,
-                                highest_iop_index_of_first_pipe):
+def start_increasing_iop_values(working_row, iop_index, row_index, rhas, computed_values_dict):
     logging.info(f"row index<--{row_index}-->")
     if iop_index > len(IOP)-1:
         return False
@@ -201,9 +268,8 @@ def start_increasing_iop_values(working_row, iop_index, row_index, rhas, compute
     else:
         LOOP_COUNT[row_index] = {'count': {IOP[iop_index]: 1}}
 
-    logging.info(f"HIOP\n{HIGHEST_IOP_EVER_HAD}")
     current_row_computed_values = get_computed_values(working_row, iop_index, row_index, rhas, computed_values_dict)
-    if current_row_computed_values:
+    if False not in current_row_computed_values:
         computed_values = {
             "velocity": current_row_computed_values['velocity'],
             "iop": current_row_computed_values['iop'],
@@ -212,57 +278,34 @@ def start_increasing_iop_values(working_row, iop_index, row_index, rhas, compute
             "fhl": current_row_computed_values['fhl'],
             "rhas": current_row_computed_values['rhas'],
             "rhae": current_row_computed_values['rhae'],
-            "row_vals": current_row_computed_values['row_vals'],
-            'delete_memory_index': delete_memory_index,
+            "row_vals": current_row_computed_values['row_vals']
         }
         computed_values_dict[row_index] = computed_values
-        return computed_values
+        return computed_values_dict
     else:
-        """Use high iop for previous pipe"""
-        # logging.info(f"MORATTU LOOPUH\n{LOOP_COUNT}")
-        # print(f"MORATTU LOOPUH\n{LOOP_COUNT}")
-        current_pipe_starting_node = working_row['start_node']
-        parent_pipe_index_list = ordered_df.index[ordered_df['end_node'] == current_pipe_starting_node].to_list()
-        if len(parent_pipe_index_list) == 0:
-            parent_pipe_index = 0
-        else:
-            parent_pipe_index = parent_pipe_index_list[0]
+        """Need some pressure!!!!!"""
+        pressure_needing_pipe_details = current_row_computed_values[1]
 
-        parent_row = computed_values_dict[parent_pipe_index]
-        if parent_pipe_index == 0:
-            logging.info(f"i became zerooooooo: {parent_pipe_index}, i'm going to reset delete memory index{DELETE_MEMORY_INDEX}")
-            delete_memory_index = 0
-        logging.info(
-            f"ppi---->{parent_pipe_index}==dmi---->{delete_memory_index} &&&& {parent_row['iop_index']} == {highest_iop_index_of_first_pipe} ")
-        if parent_pipe_index == 0 or (parent_pipe_index == delete_memory_index and parent_row[
-            'iop_index']+1 == highest_iop_index_of_first_pipe):
-            logging.info(f".........going to delete the memory---->>>{delete_memory_index}")
-            delete_memory_index += 1
-            HIGHEST_IOP_EVER_HAD.clear()
-            computed_rows_index = list(computed_values_dict.keys())
-            for computed_row in computed_rows_index:
-                if computed_row >= parent_pipe_index:
-                    del computed_values_dict[computed_row]
-            # again_row = ordered_df.loc[i]
+        size_increased_parents = make_some_pressure_for_child_node(c_rhae=pressure_needing_pipe_details['rhae'],
+                                                                   c_index=pressure_needing_pipe_details[
+                                                                       'row_index'],
+                                                                   previous_values_dict=computed_values_dict,
+                                                                   village_node=pressure_needing_pipe_details['is_village_node'])
 
-            if parent_pipe_index != 0:
-                computed_values = start_increasing_iop_values(parent_row['row_vals'], highest_iop_index_of_first_pipe,
-                                                              parent_pipe_index, parent_row['rhas'], computed_values_dict,
-                                                              delete_memory_index, highest_iop_index_of_first_pipe)
-            else:
-                computed_values = start_increasing_iop_values(parent_row['row_vals'], parent_row['iop_index'] + 1,
-                                                              parent_pipe_index, parent_row['rhas'],
-                                                              computed_values_dict,
-                                                              delete_memory_index, highest_iop_index_of_first_pipe)
-        else:
-            computed_rows_index = list(computed_values_dict.keys())
-            for computed_row in computed_rows_index:
-                if computed_row >= parent_pipe_index:
-                    del computed_values_dict[computed_row]
-            computed_values = start_increasing_iop_values(parent_row['row_vals'], parent_row['iop_index'] + 1,
-                                                          parent_pipe_index, parent_row['rhas'], computed_values_dict,
-                                                          delete_memory_index, highest_iop_index_of_first_pipe)
-        return computed_values
+        return size_increased_parents
+
+        recomputed_rows = []
+        sorted_dict = {k: size_increased_parents[k] for k in sorted(size_increased_parents)}
+        for parent_index, parent in sorted_dict.items():
+            parent_iop_index = IOP.index(parent['parent_iop'])
+            pipe_indices_list = ordered_df.index[ordered_df['end_node'] == parent['row_vals']['start_node']].to_list()
+            parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
+            PARENT_RHAS = computed_values_dict[parent_pipe_index]['rhae']
+            computed_values = start_increasing_iop_values(parent['row_vals'], parent_iop_index,
+                                                          parent_index, PARENT_RHAS, computed_values_dict)
+            recomputed_rows.append(computed_values[0])
+        return recomputed_rows
+
 
 
 computed_values_dict = {}
@@ -275,42 +318,45 @@ try:
         print("current row----->", i)
 
         row = ordered_df.loc[i]
-        logging.info(f"high iop ever had::::{HIGHEST_IOP_EVER_HAD}")
         # HIGHEST_IOP_EVER_HAD.clear()
         closest_iop_index = find_closest_iop_index_by_formula(row['discharge'])
-        if i in HIGHEST_IOP_EVER_HAD:
-            closest_iop_index = HIGHEST_IOP_EVER_HAD[i]
-            logging.info(f"n{i}n--->HIGHEST IOP HAD:::{closest_iop_index}")
+        if i in increased_top:
+            closest_iop_index += increased_top[i]
 
-        comp_values = start_increasing_iop_values(row, closest_iop_index, i, RHAS, computed_values_dict,
-                                                  DELETE_MEMORY_INDEX, HIGHEST_IOP_INDEX_OF_PARENT_PIPE)
+        comp_values = start_increasing_iop_values(row, closest_iop_index, i, RHAS, computed_values_dict)
 
 
-        if not comp_values:
+        if comp_values:
+            computed_values_dict = comp_values
+            i = list(computed_values_dict)[-1]
+            i += 1
+            current_row = ordered_df.loc[i]
+
+            pipe_indices_list = ordered_df.index[ordered_df['end_node'] == current_row['start_node']].to_list()
+            parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
+            RHAS = computed_values_dict[parent_pipe_index]['rhae']
+        elif not comp_values:
             print("excepttttttttttttttion thejdfkdjfdkjf")
             log_df = pd.DataFrame(log_rows)
             log_df.to_excel("log.xlsx")
             break
-        DELETE_MEMORY_INDEX = int(comp_values['delete_memory_index'])
-        with open("log.json", "w") as log_file:
-            json.dump(computed_values_dict, log_file, indent=4)
-        i = list(computed_values_dict)[-1]
+        else:
+            with open("log.json", "w") as log_file:
+                json.dump(computed_values_dict, log_file, indent=4)
+            i = list(computed_values_dict)[-1]
 
-        high_id_pipe = 0 if DELETE_MEMORY_INDEX == 0 else (DELETE_MEMORY_INDEX-1)
-        HIGHEST_IOP_INDEX_OF_PARENT_PIPE = computed_values_dict[high_id_pipe]['iop_index']
-        HIGHEST_IOP_EVER_HAD.clear()
+            i += 1
 
-        i += 1
+            if i > len(ordered_df) - 1:
+                log_df = pd.DataFrame(log_rows)
+                log_df.to_excel('log.xlsx')
+                break
 
-        if i > len(ordered_df) - 1:
-            log_df = pd.DataFrame(log_rows)
-            log_df.to_excel('log.xlsx')
-            break
-        current_row = ordered_df.loc[i]
+            current_row = ordered_df.loc[i]
 
-        pipe_indices_list = ordered_df.index[ordered_df['end_node'] == current_row['start_node']].to_list()
-        parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
-        RHAS = computed_values_dict[parent_pipe_index]['rhae']
+            pipe_indices_list = ordered_df.index[ordered_df['end_node'] == current_row['start_node']].to_list()
+            parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
+            RHAS = computed_values_dict[parent_pipe_index]['rhae']
 
     for key, value in computed_values_dict.items():
         ordered_df.loc[key, 'new_iop'] = value['iop']
