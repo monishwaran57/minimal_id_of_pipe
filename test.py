@@ -1,7 +1,6 @@
 from gpt_dfs import dfs_df as ordered_df
 import math
 
-
 # ordered_rows = []
 # for i, row in ordered_df.iterrows():
 #
@@ -19,6 +18,7 @@ import math
 
 ordered_df.to_excel("oha.xlsx")
 
+
 def find_velocity_by_formula(discharge, id_of_pipe):
     velocity = discharge * (4 / (math.pi * (id_of_pipe / 1000) ** 2))
     return round(velocity, 5)
@@ -32,6 +32,7 @@ def find_friction_head_loss_by_formula(length, discharge, cr_value, iop):
 def find_residual_head_at_end_by_formula(diff_in_g_level, avail_resi_head_at_start, fhl):
     rhae = (diff_in_g_level + avail_resi_head_at_start) - fhl
     return round(rhae, 5)
+
 
 def get_computed_values(working_row, iop, rhas):
     calculated_velocity = find_velocity_by_formula(working_row['discharge'], iop)
@@ -53,16 +54,18 @@ def get_computed_values(working_row, iop, rhas):
         "rhae": calculated_rhae
     }
 
+
 rhas_dict = {}
 initial_rhas = 0
 for i, row in ordered_df.iterrows():
     pipe_indices_list = ordered_df.index[ordered_df['end_node'] == row['start_node']].to_list()
-    parent_pipe_index = 0 if len(pipe_indices_list)==0 else pipe_indices_list[0]
-    current_rhas = 0 if i-1 not in rhas_dict else rhas_dict[parent_pipe_index]
-    result = get_computed_values(row, row['Diameter (mm)'],current_rhas)
+    parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
+    current_rhas = 0 if i - 1 not in rhas_dict else rhas_dict[parent_pipe_index]
+    result = get_computed_values(row, row['Diameter (mm)'], current_rhas)
     ordered_df.loc[i, 'velocity'] = result['velocity']
     ordered_df.loc[i, 'rhas'] = result['rhas']
     ordered_df.loc[i, 'rhae'] = result['rhae']
     ordered_df.loc[i, 'fhl'] = result['fhl']
 
 ordered_df.to_excel('test.xlsx')
+

@@ -3,6 +3,10 @@ import pandas as pd
 # Load the Excel file
 df = pd.read_excel('bigtest.xlsx', sheet_name="Sheet1")
 
+test_dict = {}
+for idx_row, a_row in df.iterrows():
+    test_dict[a_row['start_node']] = a_row['end_node']
+print(".........\n", test_dict)
 # Create a mapping from start_node to the corresponding pipe (row)
 start_node_map = {}
 for idx, row in df.iterrows():

@@ -82,6 +82,57 @@ def find_residual_head_at_end_by_formula(diff_in_g_level, avail_resi_head_at_sta
 
 ordered_df = dfs_df
 
+def find_rhae_until_atmost_bottom(c_r_i, c_fhl, current_row_iop, entire_dict, c_index):
+    current_row = entire_dict[c_r_i]
+    c_rhas = current_row['rhas']
+    c_parent_iop = current_row['parent_iop']
+    for row_index in range(c_r_i, len(entire_dict)):
+        c_row = entire_dict[row_index]
+        diff_in_g_level = c_row['row_vals']['ground_level_start'] - c_row['row_vals']['ground_level_end']
+        new_rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level,
+                                             avail_resi_head_at_start=c_rhas,
+                                             fhl=c_fhl)
+
+        entire_dict[row_index]['rhas'] = c_rhas
+        entire_dict[row_index]['rhae'] = new_rhae
+        entire_dict[row_index]['iop'] = current_row_iop
+        entire_dict[row_index]['iop_index'] = IOP.index(current_row_iop)
+        entire_dict[row_index]['parent_iop'] = c_parent_iop
+
+        c_rhas = new_rhae
+        c_parent_iop = current_row_iop
+        if row_index+1 in entire_dict:
+            c_row = entire_dict[row_index+1]
+            c_fhl = find_friction_head_loss_by_formula(length=c_row['row_vals']['length'],
+                                                       discharge=c_row['row_vals']['discharge'],
+                                                       cr_value=1,
+                                                       iop=c_row['iop'])
+            current_row_iop = c_row['iop']
+        else:
+            break
+
+    child_row = ordered_df.loc[c_index]
+    parent_pipe_indices_list = ordered_df.index[
+        ordered_df['end_node'] == child_row['start_node']].to_list()
+    childs_parent_pipe_index = 0 if len(parent_pipe_indices_list) == 0 else parent_pipe_indices_list[0]
+    CHILDS_PARENT_RHAS = entire_dict[childs_parent_pipe_index]['rhae'] if c_index != 0 else 0
+    nearer_iop_index = find_closest_iop_index_by_formula(discharge=child_row['discharge'])
+    parents_iop_index = entire_dict[childs_parent_pipe_index]['iop_index']
+    new_c_rhae = None
+
+    while nearer_iop_index <= parents_iop_index:
+
+        new_c_fhl = find_friction_head_loss_by_formula(length=child_row['length'], discharge=child_row['discharge'],
+                                                       cr_value=1, iop=IOP[nearer_iop_index])
+        diff_in_g_level = child_row['ground_level_start'] - child_row['ground_level_end']
+        new_c_rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level,
+                                                          avail_resi_head_at_start=CHILDS_PARENT_RHAS,
+                                                          fhl=new_c_fhl)
+        nearer_iop_index += 1
+
+    return new_c_rhae
+
+
 
 def make_some_pressure_for_child_node(c_rhae, c_index, previous_values_dict, village_node):
     needed_rhae = 28 if village_node else 21
@@ -91,54 +142,44 @@ def make_some_pressure_for_child_node(c_rhae, c_index, previous_values_dict, vil
     duplicate_dict = copy.deepcopy(previous_values_dict)
     size_increasable_parent_pipes = []
     i = 1
-
+    j = 0
+    forward_i = 1
+    forward_step = False
     size_increased_parent_pipes = {}
     while missing_rhae >=0:
         parent_pipe = duplicate_dict[c_index - i]
-        if "V" not in parent_pipe['row_vals']['end_node'] and parent_pipe['fhl'] >= 1 and parent_pipe['iop'] < parent_pipe['parent_iop'] or parent_pipe['parent_iop'] is None:
-            size_increasable_parent_pipes.append(parent_pipe)
-            print(previous_values_dict)
+        current_iop_index = IOP.index(parent_pipe['iop'])
+
+        if current_iop_index >= len(IOP) - 1:
+            forward_step = True
+            for h_c_i, h_c_row in duplicate_dict.items():
+                if h_c_row['iop'] == IOP[-1]:
+                    j = None
+                else:
+                    j = h_c_i
+                    break
+            i = 0
+            parent_pipe = duplicate_dict[j]
             current_iop_index = IOP.index(parent_pipe['iop'])
-            forward_i = 1
-            if current_iop_index >= len(IOP)-1:
-                j = c_index - i + forward_i
-                i = 0
-                parent_pipe = duplicate_dict[j]
-                current_iop_index = IOP.index(parent_pipe['iop'])
-                forward_i += 1
+            using_index = j
 
-            increased_iop = IOP[current_iop_index + 1]
-
-            new_velocity = find_velocity_by_formula(discharge=parent_pipe['row_vals']['discharge'],
-                                                    id_of_pipe=increased_iop)
-            if 0.6 <= new_velocity <=3:
-                new_fhl = find_friction_head_loss_by_formula(length=parent_pipe['row_vals']['length'],
-                                                             discharge=parent_pipe['row_vals']['discharge'],
-                                                             cr_value=1, iop=increased_iop)
-
-                reduced_fhl = parent_pipe['fhl'] - new_fhl
-                missing_rhae = missing_rhae - reduced_fhl
-                parent_pipe['fhl'] = new_fhl
-                parent_pipe['iop'] = increased_iop
-                size_increased_parent_pipes[c_index - i] = parent_pipe
-                print(previous_values_dict)
-        i += 1
-        if i > c_index:
-            print("...........computed values dict", previous_values_dict)
-            previous_values_dict = {**previous_values_dict, **size_increased_parent_pipes}
+            previous_values_dict = duplicate_dict
+            # previous_values_dict = {**previous_values_dict, **size_increased_parent_pipes}
             new_computed_dict = {}
             sorted_dict = {k: previous_values_dict[k] for k in sorted(previous_values_dict)}
-            for parent_index, parent in sorted_dict.items():
-                parent_iop_index = IOP.index(parent['iop'])
+            for f_r_i, f_row in sorted_dict.items():
+                if f_r_i <= j:
+                    continue
+                parent_iop_index = find_closest_iop_index_by_formula(f_row['row_vals']['discharge'])
                 pipe_indices_list = ordered_df.index[
-                    ordered_df['end_node'] == parent['row_vals']['start_node']].to_list()
+                    ordered_df['end_node'] == f_row['row_vals']['start_node']].to_list()
                 parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
-                PARENT_RHAS = previous_values_dict[parent_pipe_index]['rhae'] if parent_index != 0 else 0
+                PARENT_RHAS = previous_values_dict[parent_pipe_index]['rhae'] if f_r_i != 0 else 0
 
-                new_computed_values = start_increasing_iop_values(parent['row_vals'], parent_iop_index,
-                                            parent_index, PARENT_RHAS, previous_values_dict)
-                new_computed_dict[parent_index] = new_computed_values
-                previous_values_dict[parent_index] = new_computed_values
+                new_computed_values = start_increasing_iop_values(f_row['row_vals'], parent_iop_index,
+                                                                  f_r_i, PARENT_RHAS, previous_values_dict)
+                new_computed_dict = new_computed_values
+                previous_values_dict = new_computed_values
 
             child_row = ordered_df.loc[c_index]
             parent_pipe_indices_list = ordered_df.index[
@@ -148,25 +189,132 @@ def make_some_pressure_for_child_node(c_rhae, c_index, previous_values_dict, vil
             nearer_iop_index = find_closest_iop_index_by_formula(discharge=child_row['discharge'])
             parents_iop_index = new_computed_dict[childs_parent_pipe_index]['iop_index']
             new_c_rhae = c_rhae
+
             while nearer_iop_index <= parents_iop_index:
-                new_c_fhl = find_friction_head_loss_by_formula(length=child_row['length'], discharge=child_row['discharge'],
+                new_c_fhl = find_friction_head_loss_by_formula(length=child_row['length'],
+                                                               discharge=child_row['discharge'],
                                                                cr_value=1, iop=IOP[nearer_iop_index])
                 diff_in_g_level = child_row['ground_level_start'] - child_row['ground_level_end']
                 new_c_rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level,
                                                                   avail_resi_head_at_start=CHILDS_PARENT_RHAS,
                                                                   fhl=new_c_fhl)
                 nearer_iop_index += 1
-            needed_rhae = 28 if village_node else 23
+
+            needed_rhae = 28 if village_node else 21
             missing_rhae = needed_rhae - new_c_rhae
-            if missing_rhae <=0:
+            if missing_rhae <= 0:
                 pass
             else:
-                result = make_some_pressure_for_child_node(c_rhae=new_c_rhae, c_index=c_index,previous_values_dict=previous_values_dict,
-                                                  village_node=village_node)
+                result = make_some_pressure_for_child_node(c_rhae=new_c_rhae, c_index=c_index,
+                                                           previous_values_dict=previous_values_dict,
+                                                           village_node=village_node)
                 return result
             return new_computed_dict
 
-    previous_values_dict = {**previous_values_dict, **size_increased_parent_pipes}
+        else:
+            using_index = c_index - i
+            if parent_pipe['parent_iop'] is None or ("V" not in parent_pipe['row_vals']['end_node'] and parent_pipe['iop'] < parent_pipe['parent_iop']):
+                size_increasable_parent_pipes.append(parent_pipe)
+                print(previous_values_dict)
+
+                    # forward_i += 1
+
+                increased_iop = IOP[current_iop_index + 1]
+
+                new_velocity = find_velocity_by_formula(discharge=parent_pipe['row_vals']['discharge'],
+                                                        id_of_pipe=increased_iop)
+                new_fhl = find_friction_head_loss_by_formula(length=parent_pipe['row_vals']['length'],
+                                                             discharge=parent_pipe['row_vals']['discharge'],
+                                                             cr_value=1, iop=increased_iop)
+
+
+                # new_c_rhae = find_rhae_until_atmost_bottom(c_r_i=using_index,current_row_iop=increased_iop,entire_dict=previous_values_dict,
+                #                               c_fhl=new_fhl,c_index=c_index)
+
+                reduced_fhl = parent_pipe['fhl'] - new_fhl
+                missing_rhae = missing_rhae - reduced_fhl
+                parent_pipe['fhl'] = new_fhl
+                parent_pipe['iop'] = increased_iop
+                parent_pipe['iop_index'] = IOP.index(increased_iop)
+
+                diff_in_g_level = parent_pipe['row_vals']['ground_level_start'] - parent_pipe['row_vals']['ground_level_end']
+                new_rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level, avail_resi_head_at_start=parent_pipe['rhas'],
+                                                     fhl=new_fhl)
+
+                child_pipes_indices_list = ordered_df.index[
+                    ordered_df['start_node'] == parent_pipe['row_vals']['end_node']].to_list()
+                for child_index in child_pipes_indices_list:
+                    if child_index in duplicate_dict:
+                        duplicate_dict[child_index]['parent_iop'] = increased_iop
+                        duplicate_dict[child_index]['rhas'] = new_rhae
+
+
+                size_increased_parent_pipes[c_index - i] = parent_pipe
+                print(previous_values_dict)
+
+        i += 1
+        if i > c_index:
+            previous_values_dict = duplicate_dict
+            # previous_values_dict = {**previous_values_dict, **size_increased_parent_pipes}
+            new_computed_dict = {}
+            sorted_dict = {k: previous_values_dict[k] for k in sorted(previous_values_dict)}
+            for f_r_i, f_row in sorted_dict.items():
+                if f_r_i <= j:
+                    continue
+                parent_iop_index = find_closest_iop_index_by_formula(f_row['row_vals']['discharge'])
+                pipe_indices_list = ordered_df.index[
+                    ordered_df['end_node'] == f_row['row_vals']['start_node']].to_list()
+                parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
+                PARENT_RHAS = previous_values_dict[parent_pipe_index]['rhae'] if f_r_i != 0 else 0
+
+                new_computed_values = start_increasing_iop_values(f_row['row_vals'], parent_iop_index,
+                                                                  f_r_i, PARENT_RHAS, previous_values_dict)
+                new_computed_dict = new_computed_values
+                previous_values_dict = new_computed_values
+
+            child_row = ordered_df.loc[c_index]
+            parent_pipe_indices_list = ordered_df.index[
+                ordered_df['end_node'] == child_row['start_node']].to_list()
+            childs_parent_pipe_index = 0 if len(parent_pipe_indices_list) == 0 else parent_pipe_indices_list[0]
+            CHILDS_PARENT_RHAS = previous_values_dict[childs_parent_pipe_index]['rhae'] if c_index != 0 else 0
+            nearer_iop_index = find_closest_iop_index_by_formula(discharge=child_row['discharge'])
+            parents_iop_index = new_computed_dict[childs_parent_pipe_index]['iop_index']
+            new_c_rhae = c_rhae
+
+            while nearer_iop_index <= parents_iop_index:
+                new_c_fhl = find_friction_head_loss_by_formula(length=child_row['length'],
+                                                               discharge=child_row['discharge'],
+                                                               cr_value=1, iop=IOP[nearer_iop_index])
+                diff_in_g_level = child_row['ground_level_start'] - child_row['ground_level_end']
+                new_c_rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level,
+                                                                  avail_resi_head_at_start=CHILDS_PARENT_RHAS,
+                                                                  fhl=new_c_fhl)
+                nearer_iop_index += 1
+
+            needed_rhae = 28 if village_node else 21
+            missing_rhae = needed_rhae - new_c_rhae
+            if missing_rhae <= 0:
+                pass
+            else:
+                result = make_some_pressure_for_child_node(c_rhae=new_c_rhae, c_index=c_index,
+                                                           previous_values_dict=previous_values_dict,
+                                                           village_node=village_node)
+                return result
+            return new_computed_dict
+
+    # previous_values_dict = {**previous_values_dict, **size_increased_parent_pipes}
+    previous_values_dict = duplicate_dict
+    sorted_dict = {k: previous_values_dict[k] for k in sorted(previous_values_dict)}
+    for f_r_i, f_row in sorted_dict.items():
+        parent_iop_index = IOP.index(f_row['iop'])
+        pipe_indices_list = ordered_df.index[
+            ordered_df['end_node'] == f_row['row_vals']['start_node']].to_list()
+        parent_pipe_index = 0 if len(pipe_indices_list) == 0 else pipe_indices_list[0]
+        PARENT_RHAS = previous_values_dict[parent_pipe_index]['rhae'] if f_r_i != 0 else 0
+
+        new_computed_values = start_increasing_iop_values(f_row['row_vals'], parent_iop_index,
+                                                          f_r_i, PARENT_RHAS, previous_values_dict)
+        previous_values_dict = new_computed_values
     print("look inside way the things tonight", size_increasable_parent_pipes)
     return previous_values_dict
 
