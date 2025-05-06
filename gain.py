@@ -19,6 +19,8 @@ def correct_rhas_and_rhae_values(corrected_iop_dict):
 
         rhas = 0 if parent_index is None else calculated_dict[parent_index]['rhae']
 
+        calculated_dict[idx]['rhas'] = rhas
+
         calculated_dict[idx]['velocity'] = find_velocity_by_formula(discharge=calculated_dict[idx]['discharge'], id_of_pipe=calculated_dict[idx]['iop'])
 
         diff_in_g_level = calculated_dict[idx]['ground_level_start'] - calculated_dict[idx]['ground_level_end']
@@ -47,6 +49,9 @@ def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
     while missing_rhae > 0:
         pipe_index = c_index-j
         if pipe_index > 0:
+            if pipe_index == c_index:
+                move_forward = False
+                pipe_index -= 1
             pipe_above = calculated_dict[pipe_index]
             if "V" not in pipe_above['end_node'] and pipe_above['iop'] < pipe_above['parent_iop']:
                 current_iop_index = IOP.index(pipe_above['iop'])
@@ -76,9 +81,9 @@ def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
             else:
                 for h_c_i, h_c_row in calculated_dict.items():
                     if h_c_row['iop'] == IOP[-1]:
-                        j = None
+                        j += -1
                     else:
-                        j = h_c_i-1
+                        j += 1
                         break
             move_forward = True
 
@@ -151,8 +156,8 @@ def check_rhae_meets_criteria(rhae, end_node):
         return False
 
 
-while i < len(ordered_df) - 1:
-
+while i < len(ordered_df):
+    print("*********----->", i)
     current_row_from_df = ordered_df.loc[i]
 
     parent_pipe_index_list = ordered_df.index[ordered_df['end_node'] == current_row_from_df['start_node']].to_list()
@@ -165,12 +170,19 @@ while i < len(ordered_df) - 1:
 
     current_row_rhae = find_rhae(i, current_row_from_df, RHAS, PARENT_IOP)
 
-    print(calculated_dict)
-
     i += 1
 
 
+print(calculated_dict)
 
+for key, value in calculated_dict.items():
+    ordered_df.loc[key, 'new_iop'] = value['iop']
+    ordered_df.loc[key, 'new_velocity'] = value['velocity']
+    ordered_df.loc[key, 'new_fhl'] = value['fhl']
+    ordered_df.loc[key, 'available_residual_head_at_start'] = round(value['rhas'], 2)
+    ordered_df.loc[key, 'residual_head_at_end'] = round(value['rhae'], 2)
+
+ordered_df.to_excel('mha6.xlsx')
 
 
 

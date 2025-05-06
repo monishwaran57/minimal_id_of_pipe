@@ -5,13 +5,10 @@ IOP = [96.8, 111.6, 125, 142.8, 160.8, 178.6, 201, 223.4, 250.4, 314.8, 366, 416
 # print("....\n", IOP)
 
 def find_closest_iop_index_by_formula(discharge):
-    velocity = 1.5
+    velocity = 3
     id_of_pipe = (((4 / (velocity / discharge)) / 3.14)**(1/2)) * 1000
-    print(".....iop index:::", round(id_of_pipe, 2))
     closest_value = min(IOP, key=lambda x: abs(x-id_of_pipe))
-    print("closest value:::", closest_value)
     iop_index = IOP.index(closest_value)
-    print("iop_index", iop_index)
     return iop_index
 
 find_closest_iop_index_by_formula(3.84724)
