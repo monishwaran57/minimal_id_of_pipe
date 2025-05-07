@@ -1,4 +1,4 @@
-IOP = [96.8, 111.6, 125, 142.8, 160.8, 178.6, 201, 223.4, 250.4, 314.8, 366, 416.4, 466.8, 518, 619.6, 700, 800, 900,
+IOP = [95.4, 96.8, 111.6, 125, 142.8, 160.8, 178.6, 201, 223.4, 250.4, 314.8, 366, 416.4, 466.8, 518, 619.6, 700, 800, 900,
        1000, 1100, 1200, 1300, 1400]
 
 # IOP.sort()
@@ -18,13 +18,23 @@ def find_friction_head_loss_by_formula(length, discharge, cr_value, iop):
     return round(fhl, 5)
 
 
-def find_residual_head_at_end_by_formula(diff_in_g_level, avail_resi_head_at_start, fhl):
-    rhae = (diff_in_g_level + avail_resi_head_at_start) - fhl
+def find_residual_head_at_end_by_formula(diff_in_g_level, rhas, fhl):
+    rhae = (diff_in_g_level + rhas) - fhl
     return round(rhae, 5)
 
 def find_velocity_by_formula(discharge, id_of_pipe):
     velocity = discharge * (4 / (3.14 * (id_of_pipe / 1000) ** 2))
     return round(velocity, 5)
+
+def find_needed_rhas_for_getting_expected_rhae(difference_in_g_level, fhl, expected_rhae=28):
+    rhas = (expected_rhae + fhl) - difference_in_g_level
+    return round(rhas, 5)
+
+def find_needed_rhas_for_getting_rhae_0plus(difference_in_g_level, fhl, expected_rhae=0):
+    rhas = (expected_rhae + fhl) - difference_in_g_level
+    return round(rhas, 5)
+
+# find_needed_rhas_for_getting_rhae_0plus(difference_in_g_level=-8, fhl=1.68667, expected_rhae=23)
 
 """
 0 --> 96.8
