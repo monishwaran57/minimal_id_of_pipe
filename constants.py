@@ -4,6 +4,9 @@ IOP = [95.4, 96.8, 111.6, 125, 142.8, 160.8, 178.6, 201, 223.4, 250.4, 314.8, 36
 # IOP.sort()
 # print("....\n", IOP)
 
+for idx, iop in enumerate(IOP):
+    print(idx, "------>", iop)
+
 def find_closest_iop_index_by_formula(discharge):
     velocity = 3
     id_of_pipe = (((4 / (velocity / discharge)) / 3.14)**(1/2)) * 1000
@@ -34,41 +37,39 @@ def find_needed_rhas_for_getting_rhae_0plus(difference_in_g_level, fhl, expected
     rhas = (expected_rhae + fhl) - difference_in_g_level
     return round(rhas, 5)
 
+def find_fhl_with_rhas_rhae(rhae, rhas, difference_in_g_level):
+    fhl = (rhas + difference_in_g_level) - rhae
+    return round(fhl, 5)
+
+def find_iop_with_fhl(fhl, length, discharge, cr_value):
+    iop = ((((length * (discharge / cr_value) ** 1.81) * fhl/1.1) ** 1/4.81)/994.62) * 1000
+    return iop
+
 # find_needed_rhas_for_getting_rhae_0plus(difference_in_g_level=-8, fhl=1.68667, expected_rhae=23)
 
 """
-0 --> 96.8
-1 --> 111.6
-2 --> 125
-3 --> 142.8
-4 --> 160.8
-5 --> 178.6
-6 --> 201
-7 --> 223.4
-8 --> 250.4
-9 --> 314.8
-10 --> 366
-11 --> 416.4
-12 --> 466.8
-13 --> 518
-14 --> 619.6
-15 --> 700
-16 --> 800
-17 --> 900
-18 --> 1000
-19 --> 1100
-20 --> 1200
-21 --> 1300
-22 --> 1400
-23 --> 1500
-24 --> 1600
-25 --> 1700
-26 --> 1800
-27 --> 1900
-28 --> 2000
-29 --> 2100
-30 --> 2200
-31 --> 2300
-32 --> 2400
-33 --> 2500
+0 ------> 95.4
+1 ------> 96.8
+2 ------> 111.6
+3 ------> 125
+4 ------> 142.8
+5 ------> 160.8
+6 ------> 178.6
+7 ------> 201
+8 ------> 223.4
+9 ------> 250.4
+10 ------> 314.8
+11 ------> 366
+12 ------> 416.4
+13 ------> 466.8
+14 ------> 518
+15 ------> 619.6
+16 ------> 700
+17 ------> 800
+18 ------> 900
+19 ------> 1000
+20 ------> 1100
+21 ------> 1200
+22 ------> 1300
+23 ------> 1400
 """
