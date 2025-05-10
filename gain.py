@@ -2,6 +2,24 @@ from gpt_dfs import dfs_df as ordered_df
 from constants import IOP, find_closest_iop_index_by_formula, find_velocity_by_formula, \
     find_residual_head_at_end_by_formula, find_friction_head_loss_by_formula
 import json
+import logging
+import os
+
+try:
+    os.remove('output.log')
+except:
+    print("no output log to delete")
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s',
+    handlers=[
+        logging.FileHandler('output.log'),
+        # logging.StreamHandler()  # Also prints to console
+    ]
+)
 
 calculated_dict = {}
 
@@ -132,9 +150,9 @@ def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
     new_vals = {}
 
     while c_rhae < needed_rhae:
-
+        formatted_dict = {str(int_idx): str([int(pi) for pi in pi_list]) for int_idx, pi_list in
+                          iop_pipe_indexes.items()}
         with open("log.txt", "w") as log_file:
-            formatted_dict = {str(int_idx): str([int(pi) for pi in pi_list]) for int_idx, pi_list in iop_pipe_indexes.items()}
             log_file.write(json.dumps(formatted_dict, indent=4))
 
         least_iop = min(iop_pipe_indexes)
@@ -280,6 +298,7 @@ def check_rhae_meets_criteria(rhae, end_node):
 
 while i < len(ordered_df):
     print("*********----->", i)
+    logging.info(f"-------------------->{i}")
     current_row_from_df = ordered_df.loc[i]
 
     parent_pipe_index_list = ordered_df.index[ordered_df['end_node'] == current_row_from_df['start_node']].to_list()
