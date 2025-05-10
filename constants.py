@@ -8,7 +8,7 @@ for idx, iop in enumerate(IOP):
     print(idx, "------>", iop)
 
 def find_closest_iop_index_by_formula(discharge):
-    velocity = 3
+    velocity = 2
     id_of_pipe = (((4 / (velocity / discharge)) / 3.14)**(1/2)) * 1000
     closest_value = min(IOP, key=lambda x: abs(x-id_of_pipe))
     iop_index = IOP.index(closest_value)

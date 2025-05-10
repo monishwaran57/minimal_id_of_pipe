@@ -1,13 +1,14 @@
 from gpt_dfs import dfs_df as ordered_df
 from constants import IOP, find_closest_iop_index_by_formula, find_velocity_by_formula, \
     find_residual_head_at_end_by_formula, find_friction_head_loss_by_formula
+import json
 
 calculated_dict = {}
 
 i = 0
 RHAS = 0
 PARENT_IOP = None
-MINIMUM_PARENT_RHAE = 0
+MINIMUM_PARENT_RHAE = 28
 MINIMUN_VILLAGE_RHAE = 28
 
 
@@ -39,13 +40,23 @@ def create_the_parents_iop_dict(child_pipe):
     return pidx_and_piops
 
 
-def give_rhae_with_parents_iop_alone(pipe):
+def give_iop_pipe_indexes_dict(idx_and_iops):
+    iop_pipe_indexes_dict = {}
+
+    for idx, iop in idx_and_iops.items():
+        iop_pipe_indexes_dict[iop] = [ix for ix, iop2 in idx_and_iops.items() if iop == iop2]
+
+
+    return iop_pipe_indexes_dict
+
+
+def give_rhae_with_given_iop_alone(pipe, iop):
 
     parent_pipe = give_parent_pipe_details(pipe['start_node'])
 
     ppidx = parent_pipe['index']
 
-    iop = calculated_dict[ppidx]['iop']
+    parent_iop = calculated_dict[ppidx]['iop']
 
     fhl = find_friction_head_loss_by_formula(length=pipe['length'],
                                              discharge=pipe['discharge'],
@@ -65,7 +76,7 @@ def give_rhae_with_parents_iop_alone(pipe):
 
     new_vals = {
         "iop": iop,
-        "parent_iop": iop,
+        "parent_iop": parent_iop,
         "iop_index": IOP.index(iop),
         "fhl": fhl,
         "rhas": rhas,
@@ -106,31 +117,6 @@ def calculate_rhas_and_rhae_with_new_iop(new_iop_dict, start_from):
         calculated_dict[idx]['parent_iop'] = parent_iop
         calculated_dict[idx]['iop_index'] = IOP.index(new_iop)
 
-def get_the_iiplusone_dict(idx_and_iops):
-    iop_indexes_dict = {}
-
-    for idx, iop in idx_and_iops.items():
-        iop_indexes_dict[iop] = [ix for ix, iop2 in idx_and_iops.items() if iop == iop2]
-
-    ii_pi_dict = {IOP.index(ii): pi_list for ii, pi_list in iop_indexes_dict.items()}
-
-    least_key = min(ii_pi_dict)
-
-    iiplusone_pi_dict = {}
-
-    iiplusone_pi_dict[least_key+1] = ii_pi_dict[least_key]
-    # sorted_ii_pi_dict = {i: ii_pi_dict[i] for i in sorted(ii_pi_dict.keys())}
-    # for iop_index, pipe_index_list in sorted_ii_pi_dict.items():
-    #     if bool(iiplusone_pi_dict):
-    #         if iop_index in iiplusone_pi_dict:
-    #             if iop_index + 1 >= len(IOP):
-    #                 break
-    #             iiplusone_pi_dict[iop_index + 1] = pipe_index_list
-    #     else:
-    #         iiplusone_pi_dict[iop_index + 1] = pipe_index_list
-
-    return iiplusone_pi_dict
-
 
 def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
     needed_rhae = MINIMUN_VILLAGE_RHAE if is_village else MINIMUM_PARENT_RHAE
@@ -141,36 +127,60 @@ def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
 
     idx_and_iops = create_the_parents_iop_dict(child_row)
 
-    iiplusone_pi_dict = get_the_iiplusone_dict(idx_and_iops)
+    iop_pipe_indexes = give_iop_pipe_indexes_dict(idx_and_iops)
 
     new_vals = {}
 
     while c_rhae < needed_rhae:
 
-        for iop_index in sorted(iiplusone_pi_dict.keys()):
+        with open("log.txt", "w") as log_file:
+            formatted_dict = {str(int_idx): str([int(pi) for pi in pi_list]) for int_idx, pi_list in iop_pipe_indexes.items()}
+            log_file.write(json.dumps(formatted_dict, indent=4))
 
-            current_iop_using_indexes = iiplusone_pi_dict[iop_index]
+        least_iop = min(iop_pipe_indexes)
 
-            for index in current_iop_using_indexes:
-                correct_indexes[index] = IOP[iop_index]
+        top_pipe_index_to_be_increased = min(iop_pipe_indexes[least_iop])
 
-        highest_iop = max(iiplusone_pi_dict)
+        iop_index = IOP.index(least_iop)
 
-        changed_top_pipe_index = min(iiplusone_pi_dict[highest_iop])
+        correct_indexes[top_pipe_index_to_be_increased] = IOP[iop_index+1]
 
-        calculate_rhas_and_rhae_with_new_iop(correct_indexes, start_from=changed_top_pipe_index)
+        for idx in range(top_pipe_index_to_be_increased+1, len(correct_indexes)):
+            pipe_from_df = ordered_df.loc[idx]
+            closest_iop_index = find_closest_iop_index_by_formula(pipe_from_df['discharge'])
+            correct_indexes[idx] = IOP[closest_iop_index]
 
-        new_vals = give_rhae_with_parents_iop_alone(child_row)
 
-        c_rhae = new_vals['rhae']
+        calculate_rhas_and_rhae_with_new_iop(correct_indexes, start_from=top_pipe_index_to_be_increased)
+
+        parent_pipe = give_parent_pipe_details(child_start_node=child_row['start_node'])
+
+        ppidx = parent_pipe['index']
+
+        parent_iop = 0 if parent_pipe is None else calculated_dict[ppidx]['iop']
+
+        small_iop_index = find_closest_iop_index_by_formula(child_row['discharge'])
+
+        small_iop = IOP[small_iop_index]
+
+        while small_iop <= parent_iop:
+
+            new_vals = give_rhae_with_given_iop_alone(child_row, small_iop)
+
+            c_rhae = new_vals['rhae']
+
+            if c_rhae > needed_rhae:
+                break
+
+            small_iop_index += 1
+
+            small_iop = IOP[small_iop_index]
 
         if c_rhae > needed_rhae:
             break
 
         idx_and_iops_new = create_the_parents_iop_dict(child_row)
-        iiplusone_pi_dict = get_the_iiplusone_dict(idx_and_iops_new)
-
-    print("dangerous, the girl is so dangerous")
+        iop_pipe_indexes = give_iop_pipe_indexes_dict(idx_and_iops_new)
 
     return new_vals
 
@@ -214,28 +224,30 @@ def find_rhae(row_index, row_from_df, rhas, parent_iop):
         return rhae
     else:
         """find correct indexes that gives needed rhae"""
+        while closest_iop <= parent_iop:
+            new_vals = give_rhae_with_given_iop_alone(row_from_df, iop=closest_iop)
+            child_rhae_with_parent_iop = new_vals['rhae']
+            rhae_meets_criteria = check_rhae_meets_criteria(child_rhae_with_parent_iop, row_from_df['end_node'])
 
-        new_vals = give_rhae_with_parents_iop_alone(row_from_df)
-        child_rhae_with_parent_iop = new_vals['rhae']
-        rhae_meets_criteria = check_rhae_meets_criteria(child_rhae_with_parent_iop, row_from_df['end_node'])
-
-        if rhae_meets_criteria:
-            calculated_dict[row_index] = {
-                "start_node": row_from_df['start_node'],
-                "end_node": row_from_df['end_node'],
-                "length": row_from_df['length'],
-                "discharge": row_from_df['discharge'],
-                "ground_level_start": row_from_df["ground_level_start"],
-                "ground_level_end": row_from_df["ground_level_end"],
-                "parent_iop": new_vals['parent_iop'],
-                "iop": new_vals['iop'],
-                "iop_index": IOP.index(new_vals['iop']),
-                "fhl": new_vals['fhl'],
-                "velocity": new_vals['velocity'],
-                "rhas": new_vals['rhas'],
-                "rhae": child_rhae_with_parent_iop
-            }
-            return child_rhae_with_parent_iop
+            if rhae_meets_criteria:
+                calculated_dict[row_index] = {
+                    "start_node": row_from_df['start_node'],
+                    "end_node": row_from_df['end_node'],
+                    "length": row_from_df['length'],
+                    "discharge": row_from_df['discharge'],
+                    "ground_level_start": row_from_df["ground_level_start"],
+                    "ground_level_end": row_from_df["ground_level_end"],
+                    "parent_iop": new_vals['parent_iop'],
+                    "iop": new_vals['iop'],
+                    "iop_index": IOP.index(new_vals['iop']),
+                    "fhl": new_vals['fhl'],
+                    "velocity": new_vals['velocity'],
+                    "rhas": new_vals['rhas'],
+                    "rhae": child_rhae_with_parent_iop
+                }
+                return child_rhae_with_parent_iop
+            current_iop_index = IOP.index(closest_iop)
+            closest_iop = IOP[current_iop_index+1]
         else:
 
             new_vals = find_correct_indexes_that_gives_needed_rhae(c_index=row_index, c_rhae=rhae, is_village= "V" in row_from_df['end_node'])
