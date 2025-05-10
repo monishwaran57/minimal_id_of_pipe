@@ -1,7 +1,6 @@
 from gpt_dfs import dfs_df as ordered_df
 from constants import IOP, find_closest_iop_index_by_formula, find_velocity_by_formula, \
-    find_residual_head_at_end_by_formula, find_friction_head_loss_by_formula, find_needed_rhas_for_getting_expected_rhae, \
-    find_fhl_with_rhas_rhae, find_iop_with_fhl
+    find_residual_head_at_end_by_formula, find_friction_head_loss_by_formula
 
 calculated_dict = {}
 
@@ -13,64 +12,6 @@ MINIMUN_VILLAGE_RHAE = 28
 
 
 reverse_calc_dict = {}
-
-def find_rhas_and_rhae_for_parents(child_node):
-
-    matches = ordered_df.loc[ordered_df['end_node'] == child_node['start_node']]
-
-    if not matches.empty:
-        parent_node = matches.iloc[0].to_dict()
-
-        parent_node_index = matches.index[0]
-
-        diff_in_g_level = parent_node['ground_level_start'] - parent_node['ground_level_end']
-
-        closest_iop_index = find_closest_iop_index_by_formula(discharge=parent_node['discharge'])
-
-        closest_iop = IOP[closest_iop_index]
-
-        fhl = find_friction_head_loss_by_formula(length=parent_node['length'], discharge=parent_node['discharge'],
-                                                 cr_value=1, iop=closest_iop)
-
-        min_needed_rhae_by_child = child_node['min_needed_rhas']
-
-        min_needed_rhas = find_needed_rhas_for_getting_expected_rhae(difference_in_g_level=diff_in_g_level, fhl=fhl, expected_rhae=min_needed_rhae_by_child)
-
-        parent_node_vals = {
-            "min_needed_rhas": min_needed_rhas,
-            "min_needed_rhae": min_needed_rhae_by_child,
-            "fhl": fhl,
-            "velocity": 3,
-            "iop": closest_iop,
-            "iop_index": closest_iop_index,
-            "start_node": parent_node['start_node'],
-            "end_node": parent_node['end_node']
-        }
-        if parent_node_index not in reverse_calc_dict:
-            reverse_calc_dict[parent_node_index] = parent_node_vals
-        else:
-            if reverse_calc_dict[parent_node_index]["min_needed_rhae"] < min_needed_rhae_by_child:
-                reverse_calc_dict[parent_node_index] = parent_node_vals
-            else:
-                pass
-        result = find_rhas_and_rhae_for_parents(parent_node_vals)
-
-        return result
-    else:
-        return None
-
-
-
-# find_rhas_and_rhae_for_parents({
-# "min_needed_rhas": 30.51438,
-#         "min_needed_rhae": 28,
-#         "fhl": 1.37438,
-#         "velocity": 3,
-#         "iop": 96.8,
-#         "iop_index": 0,
-#         "start_node": "J-383400",
-#         "end_node": "V38_C6"
-# })
 
 def give_parent_pipe_details(child_start_node):
     matches = ordered_df.loc[ordered_df['end_node'] == child_start_node]
@@ -84,139 +25,6 @@ def give_parent_pipe_details(child_start_node):
     else:
 
         return None
-
-def find_iop_for_parent(child_pipe, childs_min_rhas):
-
-    parent_pipe = give_parent_pipe_details(child_start_node=child_pipe['start_node'])
-
-    if parent_pipe is not None:
-
-        parent_index = parent_pipe['index']
-
-        pp_pipe = give_parent_pipe_details(parent_pipe['start_node'])
-
-        if pp_pipe is not None:
-
-            pp_pipe_index = pp_pipe['index']
-
-            pp_pipe_iop = calculated_dict[pp_pipe_index]['iop']
-
-            pp_pipe_iop_index = IOP.index(pp_pipe_iop)
-
-            rhas = calculated_dict[parent_index]['rhas']
-
-            diff_g_level = parent_pipe['ground_level_start'] - parent_pipe['ground_level_end']
-
-            closest_iop_index = find_closest_iop_index_by_formula(parent_pipe['discharge'])
-
-            rhae = 0
-
-            while rhae < childs_min_rhas:
-
-                iop = IOP[closest_iop_index]
-
-                fhl = find_friction_head_loss_by_formula(length=parent_pipe['length'], discharge=parent_pipe['discharge'],
-                                                         cr_value=1, iop=iop)
-
-                rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_g_level, rhas=rhas, fhl=fhl)
-
-                if rhae < childs_min_rhas:
-                    closest_iop_index += 1
-
-                if closest_iop_index > pp_pipe_iop_index:
-                    min_rhas_needed = find_min_rhas_for_child_pipes(c_index=parent_index, expected_rhae=childs_min_rhas)
-
-                    reverse_calc_dict[parent_index] = {
-                        "iop": IOP[closest_iop_index],
-                        "rhas": min_rhas_needed,
-                        "rhae": childs_min_rhas
-                    }
-
-                    result = find_iop_for_parent(child_pipe=parent_pipe, childs_min_rhas=min_rhas_needed[0])
-                    return result
-
-            reverse_calc_dict[parent_index] = {
-                "iop": IOP[closest_iop_index],
-                "rhas": rhae,
-                "rhae": childs_min_rhas[0]
-            }
-
-            return {
-                "iop": IOP[closest_iop_index],
-                "rhae": rhae
-            }
-        else:
-            return "Abelmoscus"
-    else:
-
-        return "sawadeeka"
-
-
-
-
-def find_min_rhas_for_child_pipes(c_index, expected_rhae):
-
-    child_pipe = ordered_df.loc[c_index]
-
-    closest_iop_index = find_closest_iop_index_by_formula(discharge=child_pipe['discharge'])
-
-    closest_iop = IOP[closest_iop_index]
-
-    fhl = find_friction_head_loss_by_formula(length=child_pipe['length'], discharge=child_pipe['discharge'], cr_value=1, iop=closest_iop)
-
-    diff_in_g_level = child_pipe['ground_level_start'] - child_pipe['ground_level_end']
-
-    min_needed_rhas = find_needed_rhas_for_getting_expected_rhae(difference_in_g_level=diff_in_g_level, fhl=fhl, expected_rhae=expected_rhae)
-
-    return [min_needed_rhas, child_pipe]
-
-
-
-#
-# for idx, row in ordered_df.iterrows():
-#     if "V" in row['end_node']:
-#         find_min_rhas_for_child_pipes(idx)
-
-# for v_index, village_row in reverse_calc_dict.items():
-#     ordered_df.loc[v_index, "start_node"] = village_row['start_node']
-#     ordered_df.loc[v_index, "end_node"] = village_row['end_node']
-#     ordered_df.loc[v_index, "iop_index"] = village_row['iop_index']
-#     ordered_df.loc[v_index, "iop"] = village_row['iop']
-#     ordered_df.loc[v_index, "rhas"] = village_row['min_needed_rhas']
-#     ordered_df.loc[v_index, "rhae"] = village_row['min_needed_rhae']
-#     ordered_df.loc[v_index, "fhl"] = village_row['fhl']
-#
-# ordered_df.to_excel("min_rhas_for_child.xlsx")
-
-
-def correct_rhas_and_rhae_values(corrected_iop_dict):
-
-    for idx, new_iop in corrected_iop_dict.items():
-
-        parent_indexes_list = ordered_df.index[ordered_df['end_node'] == calculated_dict[idx]['start_node']].to_list()
-
-        parent_index = None if len(parent_indexes_list) == 0 else parent_indexes_list[0]
-
-        rhas = 0 if parent_index is None else calculated_dict[parent_index]['rhae']
-
-        calculated_dict[idx]['rhas'] = rhas
-
-        calculated_dict[idx]['velocity'] = find_velocity_by_formula(discharge=calculated_dict[idx]['discharge'], id_of_pipe=calculated_dict[idx]['iop'])
-
-        diff_in_g_level = calculated_dict[idx]['ground_level_start'] - calculated_dict[idx]['ground_level_end']
-
-        calculated_dict[idx]['rhae'] = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level, rhas=rhas,
-                                                                            fhl=calculated_dict[idx]['fhl'])
-
-
-def upgrade_parent_iop_of_child_pipes(pipe_index_of_parent, parent_iop):
-    parent_pipe = calculated_dict[pipe_index_of_parent]
-
-    child_pipe_indexes = ordered_df.index[ordered_df['start_node'] == parent_pipe['end_node']].to_list()
-
-    for child_idx in child_pipe_indexes:
-        if child_idx in calculated_dict:
-            calculated_dict[child_idx]['parent_iop'] = parent_iop
 
 
 def create_the_parents_iop_dict(child_pipe):
@@ -267,8 +75,11 @@ def give_rhae_with_parents_iop_alone(pipe):
 
     return new_vals
 
-def calculate_rhas_and_rhae_with_new_iop(new_iop_dict):
-    for idx, new_iop in new_iop_dict.items():
+def calculate_rhas_and_rhae_with_new_iop(new_iop_dict, start_from):
+
+    recalculate_dict = {idx: new_iop for idx, new_iop in new_iop_dict.items() if idx >= start_from}
+
+    for idx, new_iop in recalculate_dict.items():
         pipe = ordered_df.loc[idx]
 
         parent_pipe = give_parent_pipe_details(pipe['start_node'])
@@ -303,23 +114,26 @@ def get_the_iiplusone_dict(idx_and_iops):
 
     ii_pi_dict = {IOP.index(ii): pi_list for ii, pi_list in iop_indexes_dict.items()}
 
+    least_key = min(ii_pi_dict)
+
     iiplusone_pi_dict = {}
-    sorted_ii_pi_dict = {i: ii_pi_dict[i] for i in sorted(ii_pi_dict.keys())}
-    for iop_index, pipe_index_list in sorted_ii_pi_dict.items():
-        if bool(iiplusone_pi_dict):
-            if iop_index in iiplusone_pi_dict:
-                if iop_index + 1 >= len(IOP):
-                    break
-                iiplusone_pi_dict[iop_index + 1] = pipe_index_list
-        else:
-            iiplusone_pi_dict[iop_index + 1] = pipe_index_list
+
+    iiplusone_pi_dict[least_key+1] = ii_pi_dict[least_key]
+    # sorted_ii_pi_dict = {i: ii_pi_dict[i] for i in sorted(ii_pi_dict.keys())}
+    # for iop_index, pipe_index_list in sorted_ii_pi_dict.items():
+    #     if bool(iiplusone_pi_dict):
+    #         if iop_index in iiplusone_pi_dict:
+    #             if iop_index + 1 >= len(IOP):
+    #                 break
+    #             iiplusone_pi_dict[iop_index + 1] = pipe_index_list
+    #     else:
+    #         iiplusone_pi_dict[iop_index + 1] = pipe_index_list
 
     return iiplusone_pi_dict
 
 
 def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
     needed_rhae = MINIMUN_VILLAGE_RHAE if is_village else MINIMUM_PARENT_RHAE
-    missing_rhae = needed_rhae - c_rhae
 
     child_row = ordered_df.loc[c_index]
 
@@ -332,6 +146,7 @@ def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
     new_vals = {}
 
     while c_rhae < needed_rhae:
+
         for iop_index in sorted(iiplusone_pi_dict.keys()):
 
             current_iop_using_indexes = iiplusone_pi_dict[iop_index]
@@ -339,7 +154,11 @@ def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
             for index in current_iop_using_indexes:
                 correct_indexes[index] = IOP[iop_index]
 
-        calculate_rhas_and_rhae_with_new_iop(correct_indexes)
+        highest_iop = max(iiplusone_pi_dict)
+
+        changed_top_pipe_index = min(iiplusone_pi_dict[highest_iop])
+
+        calculate_rhas_and_rhae_with_new_iop(correct_indexes, start_from=changed_top_pipe_index)
 
         new_vals = give_rhae_with_parents_iop_alone(child_row)
 
