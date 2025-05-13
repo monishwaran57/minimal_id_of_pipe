@@ -6,6 +6,8 @@ IOP = [95.4, 96.8, 111.6, 125, 142.8, 160.8, 178.6, 201, 223.4, 250.4, 314.8, 36
 
 for idx, iop in enumerate(IOP):
     print(idx, "------>", iop)
+print(len(IOP))
+print(IOP[len(IOP)-1])
 
 def find_closest_iop_index_by_formula(discharge):
     velocity = 3
@@ -14,7 +16,6 @@ def find_closest_iop_index_by_formula(discharge):
     iop_index = IOP.index(closest_value)
     return iop_index
 
-find_closest_iop_index_by_formula(3.84724)
 
 def find_friction_head_loss_by_formula(length, discharge, cr_value, iop):
     fhl = ((length * (discharge / cr_value) ** 1.81) / (994.62 * (iop / 1000) ** 4.81)) * 1.1
