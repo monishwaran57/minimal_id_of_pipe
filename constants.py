@@ -14,7 +14,11 @@ def find_closest_iop_index_by_formula(discharge):
     id_of_pipe = (((4 / (velocity / discharge)) / 3.14)**(1/2)) * 1000
     closest_value = min(IOP, key=lambda x: abs(x-id_of_pipe))
     iop_index = IOP.index(closest_value)
+    print("*", IOP[iop_index])
     return iop_index
+
+
+find_closest_iop_index_by_formula(0.00648)
 
 
 def find_friction_head_loss_by_formula(length, discharge, cr_value, iop):
