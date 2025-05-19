@@ -26,6 +26,9 @@ def add_parent_pipe_index_to_the_list(child_pipe, end_node):
 calci_dict = {}
 
 for i, row in ordered_df.iterrows():
+    print(".........", i)
+    if i == 1237:
+        print("...")
     parent_pipe_index_list = ordered_df.index[ordered_df['end_node'] == row['start_node']].to_list()
 
     parent_pipe_index = None if len(parent_pipe_index_list) == 0 else parent_pipe_index_list[0]
@@ -43,6 +46,10 @@ for i, row in ordered_df.iterrows():
     while velocity < 0.6 or velocity > 3:
         closest_iop = IOP[closest_iop_index + 1]
         velocity = find_velocity_by_formula(discharge=row['discharge'], id_of_pipe=closest_iop)
+        if 0.6 <= velocity <= 3:
+            break
+        else:
+            closest_iop_index += 1
         # raise ValueError("velocity goes below 0.6")
 
     fhl = find_friction_head_loss_by_formula(length=row['length'],
