@@ -43,13 +43,14 @@ for i, row in ordered_df.iterrows():
 
     velocity = find_velocity_by_formula(discharge=row['discharge'], id_of_pipe=closest_iop)
 
-    while velocity < 0.6 or velocity > 3:
-        closest_iop = IOP[closest_iop_index + 1]
-        velocity = find_velocity_by_formula(discharge=row['discharge'], id_of_pipe=closest_iop)
-        if 0.6 <= velocity <= 3:
-            break
-        else:
-            closest_iop_index += 1
+    if closest_iop_index != 0:
+        while velocity < 0.6 or velocity > 3:
+            closest_iop = IOP[closest_iop_index + 1]
+            velocity = find_velocity_by_formula(discharge=row['discharge'], id_of_pipe=closest_iop)
+            if 0.6 <= velocity <= 3:
+                break
+            else:
+                closest_iop_index += 1
         # raise ValueError("velocity goes below 0.6")
 
     fhl = find_friction_head_loss_by_formula(length=row['length'],
@@ -89,14 +90,15 @@ for key, value in calci_dict.items():
 
 asce_ordered_df = ordered_df.sort_values(by="residual_head_at_end")
 
-asce_ordered_df.to_excel('dd.xlsx')
+asce_ordered_df.to_excel('ascendingly_ordered_by_-ve_rhae.xlsx')
 
 asce_calci_dict = {}
 
 ordered_list = []
 
+print("going to start lifting the deepest branch to the top, and others sequentially")
 for ridx, pipe in asce_ordered_df.iterrows():
-
+    print("------------()()()", ridx)
     if pipe['end_node'] not in asce_calci_dict:
 
         asce_calci_dict[pipe['end_node']] = [ridx]
@@ -109,6 +111,7 @@ for ridx, pipe in asce_ordered_df.iterrows():
 
 print(asce_calci_dict)
 
+print("now i'm going to reorder the dict")
 for end_node, index_list in asce_calci_dict.items():
     index_list.sort()
     for idx in index_list:

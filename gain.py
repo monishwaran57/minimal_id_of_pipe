@@ -1,5 +1,5 @@
-# from gpt_dfs import dfs_df as ordered_df
-from rain import new_order_df as ordered_df
+from gpt_dfs import dfs_df as ordered_df
+# from rain import new_order_df as ordered_df
 from constants import IOP, find_closest_iop_index_by_formula, find_velocity_by_formula, \
     find_residual_head_at_end_by_formula, find_friction_head_loss_by_formula
 import json
@@ -93,8 +93,10 @@ def give_rhae_with_given_iop_alone(pipe, iop):
 
     velocity = find_velocity_by_formula(pipe['discharge'], id_of_pipe=iop)
 
-    if velocity < 0.6 or velocity > 3:
-        return False
+    iop_index = IOP.index(iop)
+    if iop_index != 0:
+        if velocity < 0.6 or velocity > 3:
+            return False
 
     new_vals = {
         "iop": iop,
@@ -116,8 +118,9 @@ def calculate_rhas_and_rhae_with_new_iop(new_iop_dict, start_from):
         pipe = ordered_df.loc[idx]
 
         velocity = find_velocity_by_formula(discharge=pipe['discharge'], id_of_pipe=new_iop)
+        iop_index = IOP.index(new_iop)
 
-        if velocity < 0.6 or velocity > 3:
+        if iop_index != 0 and velocity < 0.6 or velocity > 3:
             child_pipe = ordered_df.loc[idx]
 
             idx_and_iops_new1 = create_the_parents_iop_dict(child_pipe)
@@ -180,6 +183,8 @@ def calculate_rhas_and_rhae_with_new_iop(new_iop_dict, start_from):
 
 
 def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
+    if c_index == 50:
+        print("hi")
     needed_rhae = MINIMUN_VILLAGE_RHAE if is_village else MINIMUM_PARENT_RHAE
 
     child_row = ordered_df.loc[c_index]
@@ -191,6 +196,9 @@ def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
     iop_pipe_indexes = give_iop_pipe_indexes_dict(idx_and_iops)
 
     new_vals = {}
+
+    if c_index == 1335:
+        print("hi")
 
     while c_rhae < needed_rhae:
         formatted_dict = {str(int_idx): str([int(pi) for pi in pi_list]) for int_idx, pi_list in
@@ -249,9 +257,12 @@ def find_rhae(row_index, row_from_df, rhas, parent_iop):
 
     closest_iop = IOP[closest_iop_index]
 
+    if row_index == 50:
+        print("kjdhfkj")
+
     velocity = find_velocity_by_formula(discharge=row_from_df['discharge'], id_of_pipe=closest_iop)
 
-    while velocity < 0.6 or velocity > 3:
+    while velocity > 3:
         closest_iop = IOP[closest_iop_index+1]
         velocity = find_velocity_by_formula(discharge=row_from_df['discharge'], id_of_pipe=closest_iop)
         # raise ValueError("velocity goes below 0.6")
@@ -287,6 +298,8 @@ def find_rhae(row_index, row_from_df, rhas, parent_iop):
         return rhae
     else:
         """find correct indexes that gives needed rhae"""
+        if parent_iop is None:
+            print("hi there")
         while closest_iop <= parent_iop:
             new_vals = give_rhae_with_given_iop_alone(row_from_df, iop=closest_iop)
             if new_vals:
@@ -340,7 +353,7 @@ def find_rhae(row_index, row_from_df, rhas, parent_iop):
 def check_rhae_meets_criteria(rhae, end_node):
     if "V" in end_node and rhae > MINIMUN_VILLAGE_RHAE:
         return True
-    elif "J" in end_node and rhae > MINIMUM_PARENT_RHAE:
+    elif "V" not in end_node and rhae > MINIMUM_PARENT_RHAE:
         return True
     else:
         return False
