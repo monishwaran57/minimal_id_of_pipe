@@ -387,7 +387,3 @@ for key, value in calculated_dict.items():
     ordered_df.loc[key, 'residual_head_at_end'] = round(value['rhae'], 2)
 
 ordered_df.to_excel('mha6.xlsx')
-
-
-
-
