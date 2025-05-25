@@ -1,188 +1,83 @@
-from constants import IOP
-# from gain import ordered_df as first_opti_df
-#
-# main_pipe_dict = {}
-#
-# for pipe_idx, pipe in first_opti_df.iterrows():
-#     if "V" not in pipe['end_node']:
-#         main_pipe_dict[pipe_idx] = {
-#             "start_node": pipe['start_node'],
-#             "end_node": pipe['end_node'],
-#             "length": pipe['length'],
-#             "discharge": pipe['discharge'],
-#             "ground_level_start": pipe["ground_level_start"],
-#             "ground_level_end": pipe["ground_level_end"],
-#             "old_dia": pipe['old_dia'],
-#             "new_iop": pipe['new_iop'],
-#             "rhas": pipe['available_residual_head_at_start'],
-#             "rhae": pipe['residual_head_at_end']
-#         }
-#     else:
-#         main_pipe_dict[pipe_idx] = {
-#             "start_node": pipe['start_node'],
-#             "end_node": pipe['end_node'],
-#             "length": pipe['length'],
-#             "discharge": pipe['discharge'],
-#             "ground_level_start": pipe["ground_level_start"],
-#             "ground_level_end": pipe["ground_level_end"],
-#             "old_dia": pipe['old_dia'],
-#             "new_iop": pipe['new_iop'],
-#             "rhas": pipe['available_residual_head_at_start'],
-#             "rhae": pipe['residual_head_at_end']
-#         }
-#         break
-main_pipe_dict = {
-    0: {'start_node': 'DC-2', 'end_node': 'J-3700', 'length': 70.4, 'discharge': 3.84724, 'ground_level_start': 265.0,
-        'ground_level_end': 206.98, 'old_dia': 1400.0, 'new_iop': 1300.0, 'rhas': 0.0, 'rhae': 57.77},
-    1: {'start_node': 'J-3700', 'end_node': 'J-3701', 'length': 331.56, 'discharge': 2.89976,
-        'ground_level_start': 206.98, 'ground_level_end': 206.94, 'old_dia': 1400.0, 'new_iop': 1300.0, 'rhas': 57.77,
-        'rhae': 57.09}, 2: {'start_node': 'J-3701', 'end_node': 'J-3702', 'length': 1358.88, 'discharge': 2.89338,
-                            'ground_level_start': 206.94, 'ground_level_end': 194.71, 'old_dia': 1400.0,
-                            'new_iop': 1300.0, 'rhas': 57.09, 'rhae': 66.41},
-    3: {'start_node': 'J-3702', 'end_node': 'J-3703', 'length': 447.59, 'discharge': 2.39764,
-        'ground_level_start': 194.71, 'ground_level_end': 192.08, 'old_dia': 1400.0, 'new_iop': 1300.0, 'rhas': 66.41,
-        'rhae': 68.36}, 4: {'start_node': 'J-3703', 'end_node': 'J-3704', 'length': 1032.23, 'discharge': 2.12818,
-                            'ground_level_start': 192.08, 'ground_level_end': 178.5, 'old_dia': 1300.0,
-                            'new_iop': 1300.0, 'rhas': 68.36, 'rhae': 80.67},
-    5: {'start_node': 'J-3704', 'end_node': 'J-3705', 'length': 175.96, 'discharge': 2.09757,
-        'ground_level_start': 178.5, 'ground_level_end': 179.64, 'old_dia': 1200.0, 'new_iop': 1200.0, 'rhas': 80.67,
-        'rhae': 79.22}, 6: {'start_node': 'J-3705', 'end_node': 'J-3706', 'length': 260.56, 'discharge': 2.09114,
-                            'ground_level_start': 179.64, 'ground_level_end': 177.32, 'old_dia': 1200.0,
-                            'new_iop': 1200.0, 'rhas': 79.22, 'rhae': 81.09},
-    7: {'start_node': 'J-3706', 'end_node': 'J-3707', 'length': 362.84, 'discharge': 2.08365,
-        'ground_level_start': 177.32, 'ground_level_end': 174.43, 'old_dia': 1200.0, 'new_iop': 1200.0, 'rhas': 81.09,
-        'rhae': 83.35}, 8: {'start_node': 'J-3707', 'end_node': 'J-3708', 'length': 698.86, 'discharge': 2.04042,
-                            'ground_level_start': 174.43, 'ground_level_end': 179.3, 'old_dia': 1200.0,
-                            'new_iop': 1200.0, 'rhas': 83.35, 'rhae': 77.31},
-    9: {'start_node': 'J-3708', 'end_node': 'J-3709', 'length': 245.72, 'discharge': 2.03412,
-        'ground_level_start': 179.3, 'ground_level_end': 177.98, 'old_dia': 1200.0, 'new_iop': 1200.0, 'rhas': 77.31,
-        'rhae': 78.22}, 10: {'start_node': 'J-3709', 'end_node': 'J-3710', 'length': 403.35, 'discharge': 2.02746,
-                             'ground_level_start': 177.98, 'ground_level_end': 174.96, 'old_dia': 1200.0,
-                             'new_iop': 1200.0, 'rhas': 78.22, 'rhae': 80.57},
-    11: {'start_node': 'J-3710', 'end_node': 'J-3711', 'length': 244.67, 'discharge': 2.02057,
-         'ground_level_start': 174.96, 'ground_level_end': 172.82, 'old_dia': 1200.0, 'new_iop': 1200.0, 'rhas': 80.57,
-         'rhae': 82.31}, 12: {'start_node': 'J-3711', 'end_node': 'J-3712', 'length': 395.64, 'discharge': 1.902,
-                              'ground_level_start': 172.82, 'ground_level_end': 173.78, 'old_dia': 1200.0,
-                              'new_iop': 1200.0, 'rhas': 82.31, 'rhae': 80.77},
-    13: {'start_node': 'J-3712', 'end_node': 'J-3713', 'length': 414.14, 'discharge': 1.6535,
-         'ground_level_start': 173.78, 'ground_level_end': 174.53, 'old_dia': 1200.0, 'new_iop': 1200.0, 'rhas': 80.77,
-         'rhae': 79.54}, 14: {'start_node': 'J-3713', 'end_node': 'J-3714', 'length': 644.63, 'discharge': 1.62637,
-                              'ground_level_start': 174.53, 'ground_level_end': 176.46, 'old_dia': 1200.0,
-                              'new_iop': 1200.0, 'rhas': 79.54, 'rhae': 76.9},
-    15: {'start_node': 'J-3714', 'end_node': 'J-3715', 'length': 670.11, 'discharge': 1.61161,
-         'ground_level_start': 176.46, 'ground_level_end': 176.7, 'old_dia': 1200.0, 'new_iop': 1200.0, 'rhas': 76.9,
-         'rhae': 75.93}, 16: {'start_node': 'J-3715', 'end_node': 'J-3716', 'length': 324.94, 'discharge': 1.5562,
-                              'ground_level_start': 176.7, 'ground_level_end': 178.09, 'old_dia': 1100.0,
-                              'new_iop': 1200.0, 'rhas': 75.93, 'rhae': 74.2},
-    17: {'start_node': 'J-3716', 'end_node': 'J-3717', 'length': 448.77, 'discharge': 1.27007,
-         'ground_level_start': 178.09, 'ground_level_end': 182.15, 'old_dia': 1000.0, 'new_iop': 1200.0, 'rhas': 74.2,
-         'rhae': 69.83}, 18: {'start_node': 'J-3717', 'end_node': 'J-3718', 'length': 301.5, 'discharge': 1.2633,
-                              'ground_level_start': 182.15, 'ground_level_end': 185.5, 'old_dia': 1000.0,
-                              'new_iop': 1200.0, 'rhas': 69.83, 'rhae': 66.26},
-    19: {'start_node': 'J-3718', 'end_node': 'J-3719', 'length': 465.7, 'discharge': 1.25676,
-         'ground_level_start': 185.5, 'ground_level_end': 188.85, 'old_dia': 1000.0, 'new_iop': 1200.0, 'rhas': 66.26,
-         'rhae': 62.59}, 20: {'start_node': 'J-3719', 'end_node': 'J-3720', 'length': 367.81, 'discharge': 1.23548,
-                              'ground_level_start': 188.85, 'ground_level_end': 194.28, 'old_dia': 1000.0,
-                              'new_iop': 1200.0, 'rhas': 62.59, 'rhae': 56.91},
-    21: {'start_node': 'J-3720', 'end_node': 'J-3721', 'length': 550.07, 'discharge': 1.22279,
-         'ground_level_start': 194.28, 'ground_level_end': 189.76, 'old_dia': 1000.0, 'new_iop': 1200.0, 'rhas': 56.91,
-         'rhae': 61.07}, 22: {'start_node': 'J-3721', 'end_node': 'J-3722', 'length': 226.81, 'discharge': 1.13657,
-                              'ground_level_start': 189.76, 'ground_level_end': 190.29, 'old_dia': 1000.0,
-                              'new_iop': 1200.0, 'rhas': 61.07, 'rhae': 60.41},
-    23: {'start_node': 'J-3722', 'end_node': 'J-3723', 'length': 287.09, 'discharge': 1.11673,
-         'ground_level_start': 190.29, 'ground_level_end': 192.18, 'old_dia': 1000.0, 'new_iop': 1200.0, 'rhas': 60.41,
-         'rhae': 58.36}, 24: {'start_node': 'J-3723', 'end_node': 'J-3724', 'length': 516.66, 'discharge': 1.11005,
-                              'ground_level_start': 192.18, 'ground_level_end': 194.03, 'old_dia': 1000.0,
-                              'new_iop': 1200.0, 'rhas': 58.36, 'rhae': 56.22},
-    25: {'start_node': 'J-3724', 'end_node': 'J-3725', 'length': 304.84, 'discharge': 1.06915,
-         'ground_level_start': 194.03, 'ground_level_end': 195.97, 'old_dia': 900.0, 'new_iop': 1000.0, 'rhas': 56.22,
-         'rhae': 53.9}, 26: {'start_node': 'J-3725', 'end_node': 'J-3726', 'length': 322.68, 'discharge': 0.70129,
-                             'ground_level_start': 195.97, 'ground_level_end': 195.77, 'old_dia': 900.0,
-                             'new_iop': 1000.0, 'rhas': 53.9, 'rhae': 53.91},
-    27: {'start_node': 'J-3726', 'end_node': 'J-3727', 'length': 301.97, 'discharge': 0.69337,
-         'ground_level_start': 195.77, 'ground_level_end': 197.17, 'old_dia': 800.0, 'new_iop': 1000.0, 'rhas': 53.91,
-         'rhae': 52.34}, 28: {'start_node': 'J-3727', 'end_node': 'J-3728', 'length': 459.04, 'discharge': 0.61598,
-                              'ground_level_start': 197.17, 'ground_level_end': 199.0, 'old_dia': 800.0,
-                              'new_iop': 1000.0, 'rhas': 52.34, 'rhae': 50.3},
-    29: {'start_node': 'J-3728', 'end_node': 'J-3729', 'length': 374.99, 'discharge': 0.60836,
-         'ground_level_start': 199.0, 'ground_level_end': 207.0, 'old_dia': 800.0, 'new_iop': 1000.0, 'rhas': 50.3,
-         'rhae': 42.13}, 30: {'start_node': 'J-3729', 'end_node': 'J-3730', 'length': 569.45, 'discharge': 0.60836,
-                              'ground_level_start': 207.0, 'ground_level_end': 210.44, 'old_dia': 800.0,
-                              'new_iop': 1000.0, 'rhas': 42.13, 'rhae': 38.43},
-    31: {'start_node': 'J-3730', 'end_node': 'J-3731', 'length': 302.9, 'discharge': 0.53494,
-         'ground_level_start': 210.44, 'ground_level_end': 208.98, 'old_dia': 700.0, 'new_iop': 900.0, 'rhas': 38.43,
-         'rhae': 39.71}, 32: {'start_node': 'J-3731', 'end_node': 'J-3732', 'length': 87.95, 'discharge': 0.22348,
-                              'ground_level_start': 208.98, 'ground_level_end': 207.75, 'old_dia': 700.0,
-                              'new_iop': 619.6, 'rhas': 39.71, 'rhae': 40.88},
-    33: {'start_node': 'J-3732', 'end_node': 'J-3733', 'length': 354.84, 'discharge': 0.21621,
-         'ground_level_start': 207.75, 'ground_level_end': 204.96, 'old_dia': 619.6, 'new_iop': 619.6, 'rhas': 40.88,
-         'rhae': 43.42}, 34: {'start_node': 'J-3733', 'end_node': 'J-3734', 'length': 274.25, 'discharge': 0.20852,
-                              'ground_level_start': 204.96, 'ground_level_end': 200.23, 'old_dia': 518.0,
-                              'new_iop': 619.6, 'rhas': 43.42, 'rhae': 47.97},
-    35: {'start_node': 'J-3734', 'end_node': 'J-3735', 'length': 171.34, 'discharge': 0.2009,
-         'ground_level_start': 200.23, 'ground_level_end': 195.94, 'old_dia': 518.0, 'new_iop': 619.6, 'rhas': 47.97,
-         'rhae': 52.16}, 36: {'start_node': 'J-3735', 'end_node': 'J-3736', 'length': 323.46, 'discharge': 0.19332,
-                              'ground_level_start': 195.94, 'ground_level_end': 192.46, 'old_dia': 466.8,
-                              'new_iop': 619.6, 'rhas': 52.16, 'rhae': 55.46},
-    37: {'start_node': 'J-3736', 'end_node': 'J-3737', 'length': 375.24, 'discharge': 0.18672,
-         'ground_level_start': 192.46, 'ground_level_end': 188.76, 'old_dia': 416.4, 'new_iop': 619.6, 'rhas': 55.46,
-         'rhae': 58.96}, 38: {'start_node': 'J-3737', 'end_node': 'J-3738', 'length': 129.13, 'discharge': 0.18023,
-                              'ground_level_start': 188.76, 'ground_level_end': 186.92, 'old_dia': 366.0,
-                              'new_iop': 518.0, 'rhas': 58.96, 'rhae': 60.65},
-    39: {'start_node': 'J-3738', 'end_node': 'J-3739', 'length': 204.52, 'discharge': 0.16579,
-         'ground_level_start': 186.92, 'ground_level_end': 184.23, 'old_dia': 366.0, 'new_iop': 518.0, 'rhas': 60.65,
-         'rhae': 63.13}, 40: {'start_node': 'J-3739', 'end_node': 'J-3740', 'length': 264.79, 'discharge': 0.15242,
-                              'ground_level_start': 184.23, 'ground_level_end': 183.03, 'old_dia': 366.0,
-                              'new_iop': 518.0, 'rhas': 63.13, 'rhae': 64.1},
-    41: {'start_node': 'J-3740', 'end_node': 'J-3741', 'length': 316.94, 'discharge': 0.13823,
-         'ground_level_start': 183.03, 'ground_level_end': 180.17, 'old_dia': 366.0, 'new_iop': 518.0, 'rhas': 64.1,
-         'rhae': 66.73}, 42: {'start_node': 'J-3741', 'end_node': 'J-3742', 'length': 365.84, 'discharge': 0.13102,
-                              'ground_level_start': 180.17, 'ground_level_end': 182.95, 'old_dia': 366.0,
-                              'new_iop': 518.0, 'rhas': 66.73, 'rhae': 63.71},
-    43: {'start_node': 'J-3742', 'end_node': 'J-3743', 'length': 237.23, 'discharge': 0.10839,
-         'ground_level_start': 182.95, 'ground_level_end': 183.99, 'old_dia': 314.8, 'new_iop': 466.8, 'rhas': 63.71,
-         'rhae': 62.48}, 44: {'start_node': 'J-3743', 'end_node': 'J-3744', 'length': 350.89, 'discharge': 0.09372,
-                              'ground_level_start': 183.99, 'ground_level_end': 177.86, 'old_dia': 250.4,
-                              'new_iop': 416.4, 'rhas': 62.48, 'rhae': 68.25},
-    45: {'start_node': 'J-3744', 'end_node': 'J-3745', 'length': 63.68, 'discharge': 0.07328,
-         'ground_level_start': 177.86, 'ground_level_end': 177.48, 'old_dia': 250.4, 'new_iop': 366.0, 'rhas': 68.25,
-         'rhae': 68.55}, 46: {'start_node': 'J-3745', 'end_node': 'J-3746', 'length': 366.6, 'discharge': 0.06637,
-                              'ground_level_start': 177.48, 'ground_level_end': 177.27, 'old_dia': 250.4,
-                              'new_iop': 366.0, 'rhas': 68.55, 'rhae': 68.39},
-    47: {'start_node': 'J-3746', 'end_node': 'J-3747', 'length': 151.5, 'discharge': 0.05913,
-         'ground_level_start': 177.27, 'ground_level_end': 178.55, 'old_dia': 250.4, 'new_iop': 314.8, 'rhas': 68.39,
-         'rhae': 66.85}, 48: {'start_node': 'J-3747', 'end_node': 'J-3748', 'length': 520.55, 'discharge': 0.0446,
-                              'ground_level_start': 178.55, 'ground_level_end': 179.38, 'old_dia': 250.4,
-                              'new_iop': 250.4, 'rhas': 66.85, 'rhae': 64.4},
-    49: {'start_node': 'J-3748', 'end_node': 'J-3749', 'length': 372.68, 'discharge': 0.02857,
-         'ground_level_start': 179.38, 'ground_level_end': 180.79, 'old_dia': 250.4, 'new_iop': 223.4, 'rhas': 64.4,
-         'rhae': 62.1}, 50: {'start_node': 'J-3749', 'end_node': 'J-3750', 'length': 912.59, 'discharge': 0.02182,
-                             'ground_level_start': 180.79, 'ground_level_end': 176.89, 'old_dia': 223.4,
-                             'new_iop': 201.0, 'rhas': 62.1, 'rhae': 63.77},
-    51: {'start_node': 'J-3750', 'end_node': 'J-3752', 'length': 105.14, 'discharge': 0.01283,
-         'ground_level_start': 176.89, 'ground_level_end': 173.86, 'old_dia': 160.8, 'new_iop': 160.8, 'rhas': 63.77,
-         'rhae': 66.51}, 52: {'start_node': 'J-3752', 'end_node': 'V33_C13', 'length': 168.61, 'discharge': 0.00648,
-                              'ground_level_start': 173.86, 'ground_level_end': 177.16, 'old_dia': 111.6,
-                              'new_iop': 111.6, 'rhas': 66.51, 'rhae': 62.43}}
-# print("katingksa\n", main_pipe_dict)
+from constants import IOP, find_velocity_by_formula, find_friction_head_loss_by_formula, \
+    find_residual_head_at_end_by_formula, find_closest_iop_index_by_formula
+import pandas as pd
 
-# dict_of_main_pipe_ids = {}
-# for idx, pipe_vals in main_pipe_dict.items():
-#     if pipe_vals['new_iop'] not in dict_of_main_pipe_ids:
-#         dict_of_main_pipe_ids[pipe_vals['new_iop']] = 1
-#     else:
-#         dict_of_main_pipe_ids[pipe_vals['new_iop']] += 1
-#
-# print("oskaban\n", dict_of_main_pipe_ids)
-#
-# high_count = 0
-# most_repeated_iop = 0
-#
-# for iop, count in dict_of_main_pipe_ids.items():
-#     if count > high_count:
-#         high_count = count
-#         most_repeated_iop = iop
+optimized_df1 = pd.read_excel("mha6.xlsx")
 
+the_dict = optimized_df1.to_dict(orient="index")
+
+deepest_branch_dict = {}
+
+for idx, pipe_row in optimized_df1.iterrows():
+    if "V" not in pipe_row['end_node']:
+        pipe_dict = dict(pipe_row)
+        pipe_dict['difference'] = pipe_dict['new_iop'] - pipe_dict['old_dia']
+        deepest_branch_dict[idx] = pipe_dict
+    else:
+        pipe_dict = dict(pipe_row)
+        pipe_dict['difference'] = pipe_dict['new_iop'] - pipe_dict['old_dia']
+        deepest_branch_dict[idx] = pipe_dict
+        break
+
+
+# print(deepest_branch_dict)
+
+deep_df = pd.DataFrame(deepest_branch_dict.values())
+
+deep_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
+
+deep_df.to_excel("deepest_branch.xlsx", index=False)
+
+def give_child_pipe_details(parent_end_node):
+    matches = optimized_df1.loc[optimized_df1['start_node'] == parent_end_node]
+
+    if not matches.empty:
+        child_pipes_list = []
+        for i, child_pipe in matches.iterrows():
+            child_dict = child_pipe.to_dict()
+            child_dict['index'] = int(i)
+            child_pipes_list.append(child_dict)
+        print("....child ppipes list", child_pipes_list)
+        return child_pipes_list
+    else:
+        return None
+
+
+def create_the_childs_iop_dict(parent_pipe):
+    cidx_and_ciops = {}
+    child_pipes_list = give_child_pipe_details(parent_end_node=parent_pipe['end_node'])
+    if child_pipes_list is not None:
+        for pipe in child_pipes_list:
+            cidx_and_ciops[pipe['index']] = pipe['new_iop']
+
+        return cidx_and_ciops
+    else:
+        return None
+
+def give_parent_pipe_details(child_start_node):
+    matches = optimized_df1.loc[optimized_df1['end_node'] == child_start_node]
+
+    if not matches.empty:
+        parent_pipe = matches.iloc[0].to_dict()
+
+        parent_pipe["index"] = matches.index[0]
+
+        return parent_pipe
+    else:
+
+        return None
+
+
+def create_the_parents_iop_dict(child_pipe):
+    pidx_and_piops = {}
+    parent_pipe = give_parent_pipe_details(child_start_node=child_pipe['start_node'])
+    while parent_pipe is not None:
+        pidx = parent_pipe['index']
+        pidx_and_piops[pidx] = the_dict[pidx]['iop']
+        parent_pipe = give_parent_pipe_details(child_start_node=parent_pipe['start_node'])
+    else:
+        pass
+    return pidx_and_piops
 
 def give_iop_pipe_indexes_dict(idx_and_iops):
     iop_pipe_indexes_dict = {}
@@ -193,16 +88,124 @@ def give_iop_pipe_indexes_dict(idx_and_iops):
 
     return iop_pipe_indexes_dict
 
+def calculate_rhas_and_rhae_with_new_iop(new_iop_dict, start_from):
 
-idx_and_iop_dict = {}
-for pipe_index, pipe_vals in main_pipe_dict.items():
-    idx_and_iop_dict[pipe_index] = pipe_vals['new_iop']
+    recalculate_dict = {i: new_iop for i, new_iop in new_iop_dict.items() if i >= start_from}
 
-iop_indexes_dict = give_iop_pipe_indexes_dict(idx_and_iop_dict)
-print("taki taki \n", iop_indexes_dict)
+    for idx, new_iop in recalculate_dict.items():
+        pipe = optimized_df1.loc[idx]
 
-for iop, indexes_list in iop_indexes_dict.items():
-    same_iop_using_last_pipe_index = max(iop_indexes_dict[iop])
+        velocity = find_velocity_by_formula(discharge=pipe['discharge'], id_of_pipe=new_iop)
+        iop_index = IOP.index(new_iop)
 
-    current_iop_index = IOP.index(iop)
+        if iop_index != 0 and velocity < 0.6 or velocity > 3:
+            child_pipe = optimized_df1.loc[idx]
+
+            idx_and_iops_new1 = create_the_parents_iop_dict(child_pipe)
+
+            iop_pipe_indexes1 = give_iop_pipe_indexes_dict(idx_and_iops_new1)
+
+            least_iop = min(iop_pipe_indexes1)
+
+            top_pipe_index_to_be_increased = min(iop_pipe_indexes1[least_iop])
+
+            iop_index = IOP.index(least_iop)
+
+            correct_indexes = {index: row_vals['iop'] for index, row_vals in the_dict.items()}
+            if iop_index + 1 <= len(IOP)-1:
+                correct_indexes[top_pipe_index_to_be_increased] = IOP[iop_index + 1]
+
+                if iop_index + 1 == len(IOP) - 1:
+                    for pipe_idx in range(top_pipe_index_to_be_increased + 1, len(correct_indexes)):
+                        pipe_from_df = optimized_df1.loc[pipe_idx]
+                        closest_iop_index = find_closest_iop_index_by_formula(pipe_from_df['discharge'])
+                        correct_indexes[pipe_idx] = IOP[closest_iop_index]
+            else:
+                correct_indexes[top_pipe_index_to_be_increased + 1] = IOP[iop_index]
+
+                if iop_index == len(IOP) - 1:
+                    for pipe_idx in range(top_pipe_index_to_be_increased + 1, len(correct_indexes)):
+                        pipe_from_df = optimized_df1.loc[pipe_idx]
+                        closest_iop_index = find_closest_iop_index_by_formula(pipe_from_df['discharge'])
+                        correct_indexes[pipe_idx] = IOP[closest_iop_index]
+
+
+
+            calculate_rhas_and_rhae_with_new_iop(correct_indexes, start_from=top_pipe_index_to_be_increased)
+
+            return False
+        else:
+            parent_pipe = give_parent_pipe_details(pipe['start_node'])
+
+            pidx = None if parent_pipe is None else parent_pipe['index']
+
+            rhas = 0 if parent_pipe is None else the_dict[pidx]['residual_head_at_end']
+
+            parent_iop = None if parent_pipe is None else the_dict[pidx]['new_iop']
+
+            diff_g_level = pipe['ground_level_start'] - pipe['ground_level_end']
+
+            fhl = find_friction_head_loss_by_formula(length=pipe['length'], discharge=pipe['discharge'], cr_value=1, iop=new_iop)
+
+            rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_g_level,rhas=rhas,fhl=fhl)
+
+            pipe_end_node = the_dict[idx]['end_node']
+
+            if "V" in pipe_end_node and rhae < 28:
+                return 500
+
+
+            the_dict[idx]['available_residual_head_at_start'] = rhas
+            the_dict[idx]['residual_head_at_end'] = rhae
+            the_dict[idx]['new_fhl'] = fhl
+            the_dict[idx]['new_velocity'] = velocity
+            the_dict[idx]['new_iop'] = new_iop
+            the_dict[idx]['parent_iop'] = parent_iop
+            the_dict[idx]['iop_index'] = IOP.index(new_iop)
+
+    return True
+
+
+def reduce_iop(pipe_index, pipe_vals, index_iop_dict):
+    if pipe_vals['new_velocity'] < 1.4:
+        child_index_and_iops_old = create_the_childs_iop_dict(parent_pipe=pipe_vals)
+        if child_index_and_iops_old is None:
+            return
+        child_index_and_iops = {pipe_idx: index_iop_dict[pipe_idx] for pipe_idx in child_index_and_iops_old}
+        print("000000000", child_index_and_iops)
+
+        pipe_iop = pipe_vals['new_iop']
+        pipe_iop_index = IOP.index(pipe_iop)
+
+        top_child_index = min(child_index_and_iops)
+        top_child_iop = child_index_and_iops[top_child_index]
+
+        if pipe_iop > top_child_iop:
+            index_iop_dict[pipe_index] = IOP[pipe_iop_index-1]
+            response = calculate_rhas_and_rhae_with_new_iop(index_iop_dict, start_from=pipe_index)
+            if response == 500:
+                """do something"""
+                print("hi")
+        else:
+            child_pipe_vals = the_dict[top_child_index]
+            reduce_iop(top_child_index, child_pipe_vals, index_iop_dict)
+
+for main_idx, pipe in deep_df.iterrows():
+    print("************<<<<>>>>>>", main_idx)
+    if main_idx == 51:
+        print("..hi")
+    index_and_iop = {index: pipe_vals['new_iop'] for index, pipe_vals in the_dict.items()}
+
+    reduce_iop(main_idx, pipe, index_and_iop)
+
+
+
+optimized_df2 = pd.DataFrame(the_dict.values())
+
+optimized_df2.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
+
+optimized_df2.to_excel("opti2.xlsx", index=False)
+
+
+
 

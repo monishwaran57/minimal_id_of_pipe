@@ -183,8 +183,6 @@ def calculate_rhas_and_rhae_with_new_iop(new_iop_dict, start_from):
 
 
 def find_correct_indexes_that_gives_needed_rhae(c_index, c_rhae, is_village):
-    if c_index == 50:
-        print("hi")
     needed_rhae = MINIMUN_VILLAGE_RHAE if is_village else MINIMUM_PARENT_RHAE
 
     child_row = ordered_df.loc[c_index]
@@ -256,9 +254,6 @@ def find_rhae(row_index, row_from_df, rhas, parent_iop):
     closest_iop_index = find_closest_iop_index_by_formula(row_from_df['discharge'])
 
     closest_iop = IOP[closest_iop_index]
-
-    if row_index == 50:
-        print("kjdhfkj")
 
     velocity = find_velocity_by_formula(discharge=row_from_df['discharge'], id_of_pipe=closest_iop)
 
