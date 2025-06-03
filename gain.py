@@ -73,9 +73,13 @@ def give_rhae_with_given_iop_alone(pipe, iop):
 
     parent_pipe = give_parent_pipe_details(pipe['start_node'])
 
-    ppidx = parent_pipe['index']
-
-    parent_iop = calculated_dict[ppidx]['iop']
+    if parent_pipe is not None:
+        ppidx = parent_pipe['index']
+        parent_iop = calculated_dict[ppidx]['iop']
+        rhas = calculated_dict[ppidx]['rhae']
+    else:
+        parent_iop = iop
+        rhas = 0
 
     fhl = find_friction_head_loss_by_formula(length=pipe['length'],
                                              discharge=pipe['discharge'],
@@ -86,7 +90,7 @@ def give_rhae_with_given_iop_alone(pipe, iop):
 
 
 
-    rhas = calculated_dict[ppidx]['rhae']
+
 
     rhae = find_residual_head_at_end_by_formula(diff_in_g_level=diff_in_g_level, rhas=rhas,
                                                 fhl=fhl)
@@ -300,6 +304,7 @@ def find_rhae(row_index, row_from_df, rhas, parent_iop):
         """find correct indexes that gives needed rhae"""
         if parent_iop is None:
             print("hi there")
+            parent_iop = closest_iop
         while closest_iop <= parent_iop:
             new_vals = give_rhae_with_given_iop_alone(row_from_df, iop=closest_iop)
             if new_vals:
